@@ -10,6 +10,8 @@ import AppLayout from "./layout/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Employees from "./pages/Employees";
 import Schedule from "./pages/Schedule";
+import Roster from "./pages/Roster";
+import Holidays from "./pages/Holidays";
 
 function Placeholder({ title }: { title: string }) {
   return (
@@ -41,8 +43,13 @@ export default function App() {
           />
 
           <Route
+            path="/roster"
+            element={<Roster />}
+          />
+
+          <Route
             path="/holidays"
-            element={<Placeholder title="Holidays" />}
+            element={<Holidays />}
           />
 
           <Route

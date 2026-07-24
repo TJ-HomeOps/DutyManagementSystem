@@ -23,18 +23,28 @@ export interface Assignment {
   notes: string;
 }
 
+export interface ExistingAssignment {
+  id: string;
+  employeeId: string;
+  notes: string;
+}
+
 interface AssignmentDialogProps {
   open: boolean;
   date: string;
+  existing?: ExistingAssignment | null;
   onClose: () => void;
-  onSave: (assignment: Assignment) => void;
+  onSave: (assignment: Assignment) => Promise<void> | void;
+  onDelete?: (id: string) => Promise<void> | void;
 }
 
 export default function AssignmentDialog({
   open,
   date,
+  existing,
   onClose,
   onSave,
+  onDelete,
 }: AssignmentDialogProps) {
   const [employees, setEmployees] = useState<Employee[]>([]);
 
@@ -44,10 +54,16 @@ export default function AssignmentDialog({
 
   const [loading, setLoading] = useState(false);
 
+  const [saving, setSaving] = useState(false);
+
+  const [deleting, setDeleting] = useState(false);
+
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!open) return;
+
+    setError("");
 
     async function loadEmployees() {
       try {
@@ -57,8 +73,12 @@ export default function AssignmentDialog({
 
         setEmployees(data);
 
-        if (data.length > 0) {
-          setEmployeeId(data[0].id);
+        if (existing) {
+          setEmployeeId(existing.employeeId);
+          setNotes(existing.notes);
+        } else {
+          setEmployeeId(data.length > 0 ? data[0].id : "");
+          setNotes("");
         }
       } catch {
         setError("Unable to load employees.");
@@ -68,25 +88,49 @@ export default function AssignmentDialog({
     }
 
     loadEmployees();
-  }, [open]);
+  }, [open, existing]);
 
-  function handleSave() {
+  async function handleSave() {
     if (!employeeId) {
       setError("Please select an employee.");
       return;
     }
 
-    onSave({
-      employeeId,
-      notes,
-    });
+    try {
+      setSaving(true);
+      setError("");
 
-    setNotes("");
+      await onSave({
+        employeeId,
+        notes,
+      });
+    } catch {
+      setError("Unable to save assignment.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!existing || !onDelete) return;
+
+    try {
+      setDeleting(true);
+      setError("");
+
+      await onDelete(existing.id);
+    } catch {
+      setError("Unable to delete assignment.");
+    } finally {
+      setDeleting(false);
+    }
   }
 
   const selectedEmployee = employees.find(
     (e) => e.id === employeeId,
   );
+
+  const busy = loading || saving || deleting;
 
   return (
     <Dialog
@@ -96,7 +140,7 @@ export default function AssignmentDialog({
       maxWidth="sm"
     >
       <DialogTitle>
-        Assign Duty
+        {existing ? "Edit Duty" : "Assign Duty"}
       </DialogTitle>
 
       <DialogContent>
@@ -118,7 +162,7 @@ export default function AssignmentDialog({
             select
             label="Employee"
             value={employeeId}
-            disabled={loading}
+            disabled={busy}
             onChange={(e) =>
               setEmployeeId(e.target.value)
             }
@@ -146,6 +190,7 @@ export default function AssignmentDialog({
             minRows={4}
             label="Notes"
             value={notes}
+            disabled={busy}
             onChange={(e) =>
               setNotes(e.target.value)
             }
@@ -154,15 +199,30 @@ export default function AssignmentDialog({
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={onClose}>
+        {existing && onDelete && (
+          <Button
+            color="error"
+            disabled={busy}
+            onClick={handleDelete}
+            sx={{ mr: "auto" }}
+          >
+            {deleting ? "Deleting…" : "Delete"}
+          </Button>
+        )}
+
+        <Button
+          onClick={onClose}
+          disabled={busy}
+        >
           Cancel
         </Button>
 
         <Button
           variant="contained"
           onClick={handleSave}
+          disabled={busy}
         >
-          Save
+          {saving ? "Saving…" : "Save"}
         </Button>
       </DialogActions>
     </Dialog>

@@ -98,6 +98,54 @@ export interface UpdateAssignmentDto {
   notes?: string;
 }
 
+export type DutyRuleType = "FIXED" | "MANUAL" | "ROTATION";
+
+export interface Holiday {
+  id: string;
+  startDate: string;
+  endDate: string;
+  name: string;
+  employeeId: string | null;
+  employee: Employee | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateHolidayDto {
+  startDate: string;
+  endDate: string;
+  name: string;
+  employeeId?: string | null;
+}
+
+export interface UpdateHolidayDto {
+  startDate?: string;
+  endDate?: string;
+  name?: string;
+  employeeId?: string | null;
+}
+
+export interface RosterDayPlan {
+  date: string;
+  weekday: string;
+  ruleType: DutyRuleType | null;
+  ruleEmployeeId: string | null;
+  ruleEmployeeName: string | null;
+  existingAssignmentId: string | null;
+  existingEmployeeId: string | null;
+  existingEmployeeName: string | null;
+  isHoliday: boolean;
+  holidayName: string | null;
+  holidayEmployeeName: string | null;
+  status: "existing" | "planned" | "unassigned" | "holiday";
+}
+
+export interface RosterGenerateResult {
+  created: RosterDayPlan[];
+  updated: RosterDayPlan[];
+  skipped: RosterDayPlan[];
+}
+
 export const api = {
   //
   // Dashboard
@@ -183,5 +231,58 @@ export const api = {
   deleteAssignment: (id: string) =>
     request<void>(`/schedule/${id}`, {
       method: "DELETE",
+    }),
+
+  //
+  // Holidays
+  //
+  holidays: () =>
+    request<Holiday[]>("/holidays"),
+
+  createHoliday: (holiday: CreateHolidayDto) =>
+    request<Holiday>("/holidays", {
+      method: "POST",
+      body: JSON.stringify(holiday),
+    }),
+
+  updateHoliday: (id: string, holiday: UpdateHolidayDto) =>
+    request<Holiday>(`/holidays/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(holiday),
+    }),
+
+  deleteHoliday: (id: string) =>
+    request<void>(`/holidays/${id}`, {
+      method: "DELETE",
+    }),
+
+  //
+  // Roster
+  //
+  rosterPreview: (
+    teamId: string,
+    year: number,
+    month: number,
+  ) =>
+    request<RosterDayPlan[]>(
+      `/roster/preview?teamId=${encodeURIComponent(
+        teamId,
+      )}&year=${year}&month=${month}`,
+    ),
+
+  rosterGenerate: (
+    teamId: string,
+    year: number,
+    month: number,
+    overwrite: boolean,
+  ) =>
+    request<RosterGenerateResult>("/roster/generate", {
+      method: "POST",
+      body: JSON.stringify({
+        teamId,
+        year,
+        month,
+        overwrite,
+      }),
     }),
 };

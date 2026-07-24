@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
+  Alert,
   Box,
   Button,
   Chip,
+  CircularProgress,
   Paper,
+  Snackbar,
   Stack,
   Typography,
 } from "@mui/material";
@@ -18,7 +21,7 @@ import AssignmentDialog, {
 } from "../components/schedule/AssignmentDialog";
 
 import { api } from "../services/api";
-import type { Employee } from "../services/api";
+import type { DutyAssignment, Employee } from "../services/api";
 
 const WEEKDAY_NAMES = [
   "Monday",
@@ -52,11 +55,6 @@ const WEEKEND_ROTATION: Array<string | null> = [
 ];
 
 const WEEKEND_ROTATION_ANCHOR = new Date(2026, 0, 2);
-
-interface DayAssignment {
-  employee: Employee;
-  notes: string;
-}
 
 interface BirthdayEvent {
   day: number;
@@ -145,6 +143,31 @@ function parseDateKey(key: string): Date {
   return createLocalDate(year, month - 1, day);
 }
 
+function dayBounds(key: string): { start: Date; end: Date } {
+  const day = parseDateKey(key);
+
+  return {
+    start: new Date(
+      day.getFullYear(),
+      day.getMonth(),
+      day.getDate(),
+      0,
+      0,
+      0,
+      0,
+    ),
+    end: new Date(
+      day.getFullYear(),
+      day.getMonth(),
+      day.getDate(),
+      23,
+      59,
+      59,
+      999,
+    ),
+  };
+}
+
 function isSameDay(first: Date, second: Date): boolean {
   return dateKey(first) === dateKey(second);
 }
@@ -201,23 +224,17 @@ function getWeekendDuty(date: Date): string | null | undefined {
   return WEEKEND_ROTATION[rotationIndex];
 }
 
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .map((part) => part.slice(0, 1))
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}
-
 export default function Schedule() {
   const [visibleMonth, setVisibleMonth] = useState(
     startOfMonth(new Date()),
   );
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [assignments, setAssignments] = useState<
-    Record<string, DayAssignment>
+    Record<string, DutyAssignment>
   >({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [snackbar, setSnackbar] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
 
@@ -226,6 +243,36 @@ export default function Schedule() {
       .then(setEmployees)
       .catch(console.error);
   }, []);
+
+  async function loadAssignments() {
+    try {
+      setLoading(true);
+      setError("");
+
+      const data = await api.getScheduleMonth(
+        visibleMonth.getFullYear(),
+        visibleMonth.getMonth() + 1,
+      );
+
+      const byDay: Record<string, DutyAssignment> = {};
+
+      for (const assignment of data) {
+        byDay[dateKey(new Date(assignment.start))] = assignment;
+      }
+
+      setAssignments(byDay);
+    } catch (err) {
+      console.error(err);
+      setError("Unable to load schedule.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadAssignments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleMonth]);
 
   const calendarDays = useMemo(() => {
     const firstDay = startOfMonth(visibleMonth);
@@ -267,24 +314,49 @@ export default function Schedule() {
     setDialogOpen(true);
   }
 
-  function saveAssignment(data: Assignment) {
+  async function saveAssignment(data: Assignment) {
     const employee = employees.find(
       (item) => item.id === data.employeeId,
     );
 
     if (!employee) {
-      return;
+      throw new Error("Employee not found.");
     }
 
-    setAssignments((current) => ({
-      ...current,
-      [selectedDate]: {
-        employee,
+    const existing = assignments[selectedDate];
+    const { start, end } = dayBounds(selectedDate);
+
+    if (existing) {
+      await api.updateAssignment(existing.id, {
+        employeeId: data.employeeId,
+        teamId: employee.teamId,
         notes: data.notes,
-      },
-    }));
+      });
+    } else {
+      await api.createAssignment({
+        employeeId: data.employeeId,
+        teamId: employee.teamId,
+        start: start.toISOString(),
+        end: end.toISOString(),
+        notes: data.notes,
+      });
+    }
 
     setDialogOpen(false);
+    setSnackbar(
+      existing ? "Duty assignment updated." : "Duty assignment created.",
+    );
+
+    await loadAssignments();
+  }
+
+  async function deleteAssignment(id: string) {
+    await api.deleteAssignment(id);
+
+    setDialogOpen(false);
+    setSnackbar("Duty assignment removed.");
+
+    await loadAssignments();
   }
 
   function getBirthday(date: Date): BirthdayEvent | undefined {
@@ -301,13 +373,32 @@ export default function Schedule() {
     );
   }
 
+  const selectedAssignment = assignments[selectedDate];
+
   return (
     <>
       <AssignmentDialog
         open={dialogOpen}
         date={selectedDate}
+        existing={
+          selectedAssignment
+            ? {
+                id: selectedAssignment.id,
+                employeeId: selectedAssignment.employeeId,
+                notes: selectedAssignment.notes ?? "",
+              }
+            : null
+        }
         onClose={() => setDialogOpen(false)}
         onSave={saveAssignment}
+        onDelete={deleteAssignment}
+      />
+
+      <Snackbar
+        open={!!snackbar}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar("")}
+        message={snackbar}
       />
 
       <Box>
@@ -328,14 +419,24 @@ export default function Schedule() {
             </Typography>
           </Box>
 
-          <Button
-            variant="outlined"
-            startIcon={<CalendarTodayIcon />}
-            onClick={() => setVisibleMonth(startOfMonth(new Date()))}
-          >
-            Today
-          </Button>
+          <Stack direction="row" spacing={2} alignItems="center">
+            {loading && <CircularProgress size={20} />}
+
+            <Button
+              variant="outlined"
+              startIcon={<CalendarTodayIcon />}
+              onClick={() => setVisibleMonth(startOfMonth(new Date()))}
+            >
+              Today
+            </Button>
+          </Stack>
         </Stack>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
 
         <Paper
           elevation={0}

@@ -47,6 +47,7 @@ model Employee {
 
   dutyRules       DutyRule[]
   dutyAssignments DutyAssignment[]
+  holidays        Holiday[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -72,6 +73,24 @@ model DutyRule {
 
   @@index([teamId])
   @@index([weekday])
+}
+
+model Holiday {
+  id String @id @default(cuid())
+
+  startDate DateTime
+  endDate   DateTime
+  name      String
+
+  employeeId String?
+  employee   Employee? @relation(fields: [employeeId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([startDate])
+  @@index([endDate])
+  @@index([employeeId])
 }
 
 model DutyAssignment {
