@@ -39,10 +39,22 @@ export interface DashboardResponse {
 export interface Team {
   id: string;
   name: string;
-  description: string;
-  color: string;
+  description: string | null;
+  color: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CreateTeamDto {
+  name: string;
+  description?: string;
+  color?: string;
+}
+
+export interface UpdateTeamDto {
+  name?: string;
+  description?: string;
+  color?: string;
 }
 
 export interface Employee {
@@ -99,6 +111,44 @@ export interface UpdateAssignmentDto {
 }
 
 export type DutyRuleType = "FIXED" | "MANUAL" | "ROTATION";
+
+export type Weekday =
+  | "MONDAY"
+  | "TUESDAY"
+  | "WEDNESDAY"
+  | "THURSDAY"
+  | "FRIDAY"
+  | "SATURDAY"
+  | "SUNDAY";
+
+export interface DutyRule {
+  id: string;
+  teamId: string;
+  weekday: Weekday;
+  ruleType: DutyRuleType;
+  employeeId: string | null;
+  active: boolean;
+  team: Team;
+  employee: Employee | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateDutyRuleDto {
+  teamId: string;
+  weekday: Weekday;
+  ruleType: DutyRuleType;
+  employeeId?: string;
+  active?: boolean;
+}
+
+export interface UpdateDutyRuleDto {
+  teamId?: string;
+  weekday?: Weekday;
+  ruleType?: DutyRuleType;
+  employeeId?: string;
+  active?: boolean;
+}
 
 export interface Holiday {
   id: string;
@@ -186,6 +236,46 @@ export const api = {
   //
   teams: () =>
     request<Team[]>("/teams"),
+
+  createTeam: (team: CreateTeamDto) =>
+    request<Team>("/teams", {
+      method: "POST",
+      body: JSON.stringify(team),
+    }),
+
+  updateTeam: (id: string, team: UpdateTeamDto) =>
+    request<Team>(`/teams/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(team),
+    }),
+
+  deleteTeam: (id: string) =>
+    request<void>(`/teams/${id}`, {
+      method: "DELETE",
+    }),
+
+  //
+  // Duty Rules
+  //
+  dutyRules: () =>
+    request<DutyRule[]>("/duty-rules"),
+
+  createDutyRule: (rule: CreateDutyRuleDto) =>
+    request<DutyRule>("/duty-rules", {
+      method: "POST",
+      body: JSON.stringify(rule),
+    }),
+
+  updateDutyRule: (id: string, rule: UpdateDutyRuleDto) =>
+    request<DutyRule>(`/duty-rules/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(rule),
+    }),
+
+  deleteDutyRule: (id: string) =>
+    request<void>(`/duty-rules/${id}`, {
+      method: "DELETE",
+    }),
 
   //
   // Schedule

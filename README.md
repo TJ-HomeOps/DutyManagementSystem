@@ -62,10 +62,24 @@ Designed for organizations that need a simple overview of personnel, teams, duty
 
 ---
 
+### Teams
+
+- Create, edit and delete teams (name, description, color)
+- Color is used consistently across Employees, Schedule, Roster and Duty Rules
+- Deletion is blocked with a clear message while a team still has employees, duty rules, or assignments linked to it
+
+---
+
+### Duty Rules
+
+- Per-team, per-weekday rules: `FIXED` (always the same employee), `ROTATION` (rotates weekly across the team), or `MANUAL` (assigned by hand)
+- Filterable by team, with duplicate team/weekday rules rejected
+- Directly drives Roster Generation
+
+---
+
 ## Planned Features
 
-- Duty Rules management page (frontend)
-- Teams management page (frontend)
 - Duty conflict detection (e.g. double-booking, missing rotation members)
 - Employee availability
 - Reporting
@@ -154,8 +168,8 @@ npm run dev
 |---------|--------|
 | Dashboard | ✅ |
 | Employees | ✅ |
-| Teams | 🚧 (backend done, frontend page pending) |
-| Duty Rules | 🚧 (backend done, frontend page pending) |
+| Teams | ✅ |
+| Duty Rules | ✅ |
 | Schedule | ✅ |
 | Roster Engine | ✅ |
 | Holidays | ✅ |
