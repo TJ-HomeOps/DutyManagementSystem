@@ -1,0 +1,187 @@
+const API_BASE =
+  import.meta.env.VITE_API_URL || "http://localhost:3001";
+
+async function request<T>(
+  endpoint: string,
+  options?: RequestInit,
+): Promise<T> {
+  const response = await fetch(`${API_BASE}${endpoint}`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(options?.headers ?? {}),
+    },
+    ...options,
+  });
+
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || `API Error ${response.status}`);
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  return response.json();
+}
+
+export interface DashboardResponse {
+  stats: {
+    employees: number;
+    teams: number;
+    rules: number;
+    assignments: number;
+  };
+  todayDuty: any;
+  upcoming: any[];
+}
+
+export interface Team {
+  id: string;
+  name: string;
+  description: string;
+  color: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Employee {
+  id: string;
+  name: string;
+  department: string;
+  teamId: string;
+  createdAt: string;
+  updatedAt: string;
+  team: Team;
+}
+
+export interface DutyAssignment {
+  id: string;
+  teamId: string;
+  employeeId: string;
+  start: string;
+  end: string;
+  notes?: string;
+
+  employee: Employee;
+  team: Team;
+
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateEmployeeDto {
+  name: string;
+  department: string;
+  teamId: string;
+}
+
+export interface UpdateEmployeeDto {
+  name?: string;
+  department?: string;
+  teamId?: string;
+}
+
+export interface CreateAssignmentDto {
+  teamId: string;
+  employeeId: string;
+  start: string;
+  end: string;
+  notes?: string;
+}
+
+export interface UpdateAssignmentDto {
+  teamId?: string;
+  employeeId?: string;
+  start?: string;
+  end?: string;
+  notes?: string;
+}
+
+export const api = {
+  //
+  // Dashboard
+  //
+  dashboard: () =>
+    request<DashboardResponse>("/dashboard"),
+
+  //
+  // Employees
+  //
+  employees: () =>
+    request<Employee[]>("/employees"),
+
+  createEmployee: (
+    employee: CreateEmployeeDto,
+  ) =>
+    request<Employee>("/employees", {
+      method: "POST",
+      body: JSON.stringify(employee),
+    }),
+
+  updateEmployee: (
+    id: string,
+    employee: UpdateEmployeeDto,
+  ) =>
+    request<Employee>(`/employees/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(employee),
+    }),
+
+  deleteEmployee: (id: string) =>
+    request<void>(`/employees/${id}`, {
+      method: "DELETE",
+    }),
+
+  //
+  // Teams
+  //
+  teams: () =>
+    request<Team[]>("/teams"),
+
+  //
+  // Schedule
+  //
+  getSchedule: (
+    start: string,
+    end: string,
+  ) =>
+    request<DutyAssignment[]>(
+      `/schedule?start=${encodeURIComponent(
+        start,
+      )}&end=${encodeURIComponent(end)}`,
+    ),
+
+  getScheduleMonth: (
+    year: number,
+    month: number,
+  ) =>
+    request<DutyAssignment[]>(
+      `/schedule/month?year=${year}&month=${month}`,
+    ),
+
+  createAssignment: (
+    assignment: CreateAssignmentDto,
+  ) =>
+    request<DutyAssignment>("/schedule", {
+      method: "POST",
+      body: JSON.stringify(assignment),
+    }),
+
+  updateAssignment: (
+    id: string,
+    assignment: UpdateAssignmentDto,
+  ) =>
+    request<DutyAssignment>(
+      `/schedule/${id}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(assignment),
+      },
+    ),
+
+  deleteAssignment: (id: string) =>
+    request<void>(`/schedule/${id}`, {
+      method: "DELETE",
+    }),
+};
