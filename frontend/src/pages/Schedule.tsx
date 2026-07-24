@@ -11,6 +11,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
@@ -441,10 +442,11 @@ export default function Schedule() {
         <Paper
           elevation={0}
           sx={{
-            border: "1px solid #E5E7EB",
+            border: "1px solid",
+            borderColor: "divider",
             borderRadius: 3,
             overflow: "hidden",
-            bgcolor: "#FFFFFF",
+            bgcolor: "background.paper",
           }}
         >
           <Stack
@@ -454,7 +456,8 @@ export default function Schedule() {
             sx={{
               px: { xs: 2, md: 3 },
               py: 2,
-              borderBottom: "1px solid #E5E7EB",
+              borderBottom: "1px solid",
+              borderColor: "divider",
             }}
           >
             <Button
@@ -493,8 +496,9 @@ export default function Schedule() {
               display: "grid",
               gridTemplateColumns:
                 "repeat(7, minmax(0, 1fr))",
-              borderBottom: "1px solid #E5E7EB",
-              bgcolor: "#F8FAFC",
+              borderBottom: "1px solid",
+              borderColor: "divider",
+              bgcolor: "action.hover",
             }}
           >
             {WEEKDAY_NAMES.map((weekday) => (
@@ -503,8 +507,8 @@ export default function Schedule() {
                 sx={{
                   px: 1,
                   py: 1.5,
-                  borderRight:
-                    "1px solid #E5E7EB",
+                  borderRight: "1px solid",
+                  borderColor: "divider",
                   "&:last-child": {
                     borderRight: "none",
                   },
@@ -563,7 +567,7 @@ export default function Schedule() {
                 <Box
                   key={key}
                   onClick={() => openDay(date)}
-                  sx={{
+                  sx={(theme) => ({
                     position: "relative",
                     minHeight: {
                       xs: 132,
@@ -572,24 +576,26 @@ export default function Schedule() {
                     },
                     p: 1,
                     cursor: "pointer",
-                    borderRight:
-                      "1px solid #E5E7EB",
-                    borderBottom:
-                      "1px solid #E5E7EB",
+                    borderRight: "1px solid",
+                    borderBottom: "1px solid",
+                    borderColor: "divider",
                     bgcolor: isCurrentMonth
                       ? isWeekend
-                        ? "#FBFCFE"
-                        : "#FFFFFF"
-                      : "#F8FAFC",
+                        ? alpha(theme.palette.primary.main, 0.04)
+                        : "background.paper"
+                      : "action.hover",
                     opacity: isCurrentMonth ? 1 : 0.55,
                     transition: "background-color 160ms ease",
                     "&:nth-of-type(7n)": {
                       borderRight: "none",
                     },
                     "&:hover": {
-                      bgcolor: "#F0F7FF",
+                      bgcolor: alpha(
+                        theme.palette.primary.main,
+                        0.08,
+                      ),
                     },
-                  }}
+                  })}
                 >
                   <Stack
                     direction="row"
@@ -605,11 +611,11 @@ export default function Schedule() {
                         placeItems: "center",
                         borderRadius: "50%",
                         bgcolor: isToday
-                          ? "#0A4D8C"
+                          ? "primary.main"
                           : "transparent",
                         color: isToday
-                          ? "#FFFFFF"
-                          : "#374151",
+                          ? "primary.contrastText"
+                          : "text.primary",
                         fontWeight: 700,
                         fontSize: 13,
                       }}
@@ -639,17 +645,21 @@ export default function Schedule() {
                               ? `Weekend: ${displayedDuty}`
                               : `Duty: ${displayedDuty}`
                         }
-                        sx={{
+                        sx={(theme) => ({
                           alignSelf: "stretch",
                           height: "auto",
                           justifyContent: "flex-start",
                           bgcolor: manualAssignment
-                            ? manualAssignment.employee.team
-                                .color ?? "#0A4D8C"
-                            : "#E8F1FB",
+                            ? (manualAssignment.employee.team
+                                .color ??
+                              theme.palette.primary.main)
+                            : alpha(
+                                theme.palette.primary.main,
+                                0.12,
+                              ),
                           color: manualAssignment
                             ? "#FFFFFF"
-                            : "#0A4D8C",
+                            : theme.palette.primary.main,
                           fontWeight: 700,
                           "& .MuiChip-label": {
                             display: "block",
@@ -657,7 +667,7 @@ export default function Schedule() {
                             textOverflow: "ellipsis",
                             py: 0.45,
                           },
-                        }}
+                        })}
                       />
                     )}
 
@@ -731,7 +741,7 @@ export default function Schedule() {
                       <Typography
                         variant="caption"
                         sx={{
-                          color: "#6B7280",
+                          color: "text.secondary",
                           fontWeight: 600,
                         }}
                       >
@@ -754,19 +764,19 @@ export default function Schedule() {
           <Chip
             size="small"
             label="Fixed weekday duty"
-            sx={{
-              bgcolor: "#E8F1FB",
-              color: "#0A4D8C",
+            sx={(theme) => ({
+              bgcolor: alpha(theme.palette.primary.main, 0.12),
+              color: theme.palette.primary.main,
               fontWeight: 700,
-            }}
+            })}
           />
 
           <Chip
             size="small"
             label="Weekend duty"
             sx={{
-              bgcolor: "#F3F4F6",
-              color: "#374151",
+              bgcolor: "action.selected",
+              color: "text.primary",
               fontWeight: 700,
             }}
           />

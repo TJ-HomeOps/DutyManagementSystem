@@ -78,6 +78,13 @@ Designed for organizations that need a simple overview of personnel, teams, duty
 
 ---
 
+### Light / Dark Mode
+
+- Toggle in the top bar, with the choice persisted and the OS preference respected on first load
+- Full theme system — all pages and layout chrome adapt, not just a background swap
+
+---
+
 ## Planned Features
 
 - Duty conflict detection (e.g. double-booking, missing rotation members)

@@ -59,7 +59,9 @@ export default function Dashboard() {
               elevation={0}
               sx={{
                 borderRadius: 3,
-                border: "1px solid #e5e7eb",
+                border: "1px solid",
+                borderColor: "divider",
+                bgcolor: "background.paper",
               }}
             >
               <CardContent>
@@ -72,7 +74,7 @@ export default function Dashboard() {
                   sx={{
                     mt: 2,
                     fontWeight: 700,
-                    color: "#0A4D8C",
+                    color: "primary.main",
                   }}
                 >
                   {value ?? "..."}

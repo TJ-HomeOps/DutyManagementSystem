@@ -32,6 +32,7 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import { alpha } from "@mui/material/styles";
 
 import { api } from "../services/api";
 import type {
@@ -451,7 +452,8 @@ export default function DutyRules() {
         <Card
           elevation={0}
           sx={{
-            border: "1px solid #E5E7EB",
+            border: "1px solid",
+            borderColor: "divider",
             borderRadius: 3,
           }}
         >
@@ -511,12 +513,13 @@ export default function DutyRules() {
                         <Chip
                           size="small"
                           label={rule.team.name}
-                          sx={{
+                          sx={(theme) => ({
                             bgcolor:
-                              rule.team.color ?? "#0A4D8C",
+                              rule.team.color ??
+                              theme.palette.primary.main,
                             color: "#FFFFFF",
                             fontWeight: 700,
-                          }}
+                          })}
                         />
                       </TableCell>
 
@@ -544,15 +547,18 @@ export default function DutyRules() {
                           label={
                             rule.active ? "Active" : "Inactive"
                           }
-                          sx={{
+                          sx={(theme) => ({
                             bgcolor: rule.active
-                              ? "#E8F1FB"
-                              : "#F3F4F6",
+                              ? alpha(
+                                  theme.palette.primary.main,
+                                  0.12,
+                                )
+                              : theme.palette.action.selected,
                             color: rule.active
-                              ? "#0A4D8C"
-                              : "#374151",
+                              ? theme.palette.primary.main
+                              : theme.palette.text.secondary,
                             fontWeight: 700,
-                          }}
+                          })}
                         />
                       </TableCell>
 

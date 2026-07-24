@@ -23,6 +23,7 @@ import {
 } from "@mui/material";
 
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import { alpha, useTheme, type Theme } from "@mui/material/styles";
 
 import { api } from "../services/api";
 import type { RosterDayPlan, Team } from "../services/api";
@@ -52,34 +53,40 @@ const WEEKDAY_LABELS: Record<string, string> = {
   SUNDAY: "Sun",
 };
 
-const STATUS_STYLES: Record<
+function getStatusStyles(
+  theme: Theme,
+): Record<
   RosterDayPlan["status"],
   { label: string; bgcolor: string; color: string }
-> = {
-  existing: {
-    label: "Already scheduled",
-    bgcolor: "#F3F4F6",
-    color: "#374151",
-  },
-  planned: {
-    label: "Will be created",
-    bgcolor: "#E8F1FB",
-    color: "#0A4D8C",
-  },
-  unassigned: {
-    label: "No rule / manual",
-    bgcolor: "#FDECEC",
-    color: "#B42318",
-  },
-  holiday: {
-    label: "Holiday",
-    bgcolor: "#FEF3C7",
-    color: "#92400E",
-  },
-};
+> {
+  return {
+    existing: {
+      label: "Already scheduled",
+      bgcolor: theme.palette.action.selected,
+      color: theme.palette.text.secondary,
+    },
+    planned: {
+      label: "Will be created",
+      bgcolor: alpha(theme.palette.primary.main, 0.12),
+      color: theme.palette.primary.main,
+    },
+    unassigned: {
+      label: "No rule / manual",
+      bgcolor: alpha(theme.palette.error.main, 0.12),
+      color: theme.palette.error.main,
+    },
+    holiday: {
+      label: "Holiday",
+      bgcolor: alpha(theme.palette.warning.main, 0.16),
+      color: theme.palette.warning.dark,
+    },
+  };
+}
 
 export default function Roster() {
   const now = new Date();
+  const theme = useTheme();
+  const statusStyles = getStatusStyles(theme);
 
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamId, setTeamId] = useState("");
@@ -204,7 +211,8 @@ export default function Roster() {
       <Paper
         elevation={0}
         sx={{
-          border: "1px solid #E5E7EB",
+          border: "1px solid",
+          borderColor: "divider",
           borderRadius: 3,
           p: 3,
           mb: 3,
@@ -283,8 +291,8 @@ export default function Roster() {
           size="small"
           label={`${summary.existing} already scheduled`}
           sx={{
-            bgcolor: STATUS_STYLES.existing.bgcolor,
-            color: STATUS_STYLES.existing.color,
+            bgcolor: statusStyles.existing.bgcolor,
+            color: statusStyles.existing.color,
             fontWeight: 700,
           }}
         />
@@ -293,8 +301,8 @@ export default function Roster() {
           size="small"
           label={`${summary.planned} to generate`}
           sx={{
-            bgcolor: STATUS_STYLES.planned.bgcolor,
-            color: STATUS_STYLES.planned.color,
+            bgcolor: statusStyles.planned.bgcolor,
+            color: statusStyles.planned.color,
             fontWeight: 700,
           }}
         />
@@ -303,8 +311,8 @@ export default function Roster() {
           size="small"
           label={`${summary.unassigned} unassigned`}
           sx={{
-            bgcolor: STATUS_STYLES.unassigned.bgcolor,
-            color: STATUS_STYLES.unassigned.color,
+            bgcolor: statusStyles.unassigned.bgcolor,
+            color: statusStyles.unassigned.color,
             fontWeight: 700,
           }}
         />
@@ -313,8 +321,8 @@ export default function Roster() {
           size="small"
           label={`${summary.holiday} holiday`}
           sx={{
-            bgcolor: STATUS_STYLES.holiday.bgcolor,
-            color: STATUS_STYLES.holiday.color,
+            bgcolor: statusStyles.holiday.bgcolor,
+            color: statusStyles.holiday.color,
             fontWeight: 700,
           }}
         />
@@ -323,7 +331,8 @@ export default function Roster() {
       <Paper
         elevation={0}
         sx={{
-          border: "1px solid #E5E7EB",
+          border: "1px solid",
+          borderColor: "divider",
           borderRadius: 3,
           overflow: "hidden",
         }}
@@ -347,7 +356,7 @@ export default function Roster() {
 
               <TableBody>
                 {plan.map((day) => {
-                  const style = STATUS_STYLES[day.status];
+                  const style = statusStyles[day.status];
                   const employeeName =
                     day.status === "existing"
                       ? day.existingEmployeeName
@@ -368,7 +377,7 @@ export default function Roster() {
                             component="span"
                             variant="body2"
                             sx={{
-                              color: STATUS_STYLES.holiday
+                              color: statusStyles.holiday
                                 .color,
                               fontWeight: 600,
                             }}

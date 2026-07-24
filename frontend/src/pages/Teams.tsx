@@ -318,7 +318,8 @@ export default function Teams() {
         <Card
           elevation={0}
           sx={{
-            border: "1px solid #E5E7EB",
+            border: "1px solid",
+            borderColor: "divider",
             borderRadius: 3,
           }}
         >

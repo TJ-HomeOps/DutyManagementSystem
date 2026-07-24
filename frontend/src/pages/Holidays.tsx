@@ -381,7 +381,8 @@ export default function Holidays() {
         <Card
           elevation={0}
           sx={{
-            border: "1px solid #E5E7EB",
+            border: "1px solid",
+            borderColor: "divider",
             borderRadius: 3,
           }}
         >
@@ -454,21 +455,21 @@ export default function Holidays() {
                           <Chip
                             size="small"
                             label={holiday.employee.name}
-                            sx={{
+                            sx={(theme) => ({
                               bgcolor:
-                                holiday.employee.team.color ??
-                                "#0A4D8C",
+                                holiday.employee!.team.color ??
+                                theme.palette.primary.main,
                               color: "#FFFFFF",
                               fontWeight: 700,
-                            }}
+                            })}
                           />
                         ) : (
                           <Chip
                             size="small"
                             label="All employees"
                             sx={{
-                              bgcolor: "#F3F4F6",
-                              color: "#374151",
+                              bgcolor: "action.selected",
+                              color: "text.primary",
                               fontWeight: 700,
                             }}
                           />

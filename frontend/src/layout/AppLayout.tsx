@@ -3,18 +3,19 @@ import { NavLink } from "react-router-dom";
 
 import {
   AppBar,
-  Avatar,
   Box,
-  CssBaseline,
   Divider,
   Drawer,
+  IconButton,
   List,
   ListItemButton,
   ListItemIcon,
   ListItemText,
   Toolbar,
+  Tooltip,
   Typography,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import BadgeIcon from "@mui/icons-material/Badge";
@@ -25,6 +26,10 @@ import AssessmentIcon from "@mui/icons-material/Assessment";
 import SettingsIcon from "@mui/icons-material/Settings";
 import BeachAccessIcon from "@mui/icons-material/BeachAccess";
 import ViewWeekIcon from "@mui/icons-material/ViewWeek";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
+import LightModeIcon from "@mui/icons-material/LightMode";
+
+import { useColorMode } from "../theme/ColorModeProvider";
 
 const drawerWidth = 260;
 const appBarHeight = 64;
@@ -107,24 +112,25 @@ const menu = [
 ];
 
 export default function AppLayout({ children }: Props) {
+  const { mode, toggleMode } = useColorMode();
+
   return (
     <Box
       sx={{
         display: "flex",
         minHeight: "100vh",
-        bgcolor: "#f4f7fb",
+        bgcolor: "background.default",
       }}
     >
-      <CssBaseline />
-
       <AppBar
         position="fixed"
         elevation={0}
         sx={{
           height: appBarHeight,
-          bgcolor: "#ffffff",
-          color: "#16355c",
-          borderBottom: "1px solid #E5E7EB",
+          bgcolor: "background.paper",
+          color: "text.primary",
+          borderBottom: "1px solid",
+          borderColor: "divider",
           zIndex: (theme) => theme.zIndex.drawer + 1,
         }}
       >
@@ -139,9 +145,25 @@ export default function AppLayout({ children }: Props) {
             Duty Management System
           </Typography>
 
-          <Avatar sx={{ bgcolor: "#0A4D8C" }}>
-            R
-          </Avatar>
+          <Tooltip
+            title={
+              mode === "dark"
+                ? "Switch to light mode"
+                : "Switch to dark mode"
+            }
+          >
+            <IconButton
+              onClick={toggleMode}
+              color="inherit"
+              aria-label="Toggle color mode"
+            >
+              {mode === "dark" ? (
+                <LightModeIcon />
+              ) : (
+                <DarkModeIcon />
+              )}
+            </IconButton>
+          </Tooltip>
         </Toolbar>
       </AppBar>
 
@@ -154,8 +176,9 @@ export default function AppLayout({ children }: Props) {
             width: drawerWidth,
             top: `${appBarHeight}px`,
             height: `calc(100% - ${appBarHeight}px)`,
-            borderRight: "1px solid #E5E7EB",
-            bgcolor: "#fff",
+            borderRight: "1px solid",
+            borderColor: "divider",
+            bgcolor: "background.paper",
             boxSizing: "border-box",
           },
         }}
@@ -184,7 +207,7 @@ export default function AppLayout({ children }: Props) {
                   key={item.path}
                   component={NavLink}
                   to={item.path}
-                  sx={{
+                  sx={(theme) => ({
                     mx: 1.5,
                     mb: 0.5,
                     borderRadius: 2,
@@ -196,11 +219,14 @@ export default function AppLayout({ children }: Props) {
                     },
 
                     "&.active": {
-                      bgcolor: "#E8F1FB",
-                      color: "#0A4D8C",
+                      bgcolor: alpha(
+                        theme.palette.primary.main,
+                        0.15,
+                      ),
+                      color: theme.palette.primary.main,
                       fontWeight: 700,
                     },
-                  }}
+                  })}
                 >
                   <ListItemIcon>
                     {item.icon}
