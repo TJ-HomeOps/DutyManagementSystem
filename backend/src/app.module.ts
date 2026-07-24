@@ -13,6 +13,7 @@ import { ScheduleModule } from './schedule/schedule.module';
 import { RosterModule } from './roster/roster.module';
 import { DutyRulesModule } from './duty-rules/duty-rules.module';
 import { DutyAssignmentsModule } from './duty-assignments/duty-assignments.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { DutyAssignmentsModule } from './duty-assignments/duty-assignments.modul
     RosterModule,
     DutyRulesModule,
     DutyAssignmentsModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

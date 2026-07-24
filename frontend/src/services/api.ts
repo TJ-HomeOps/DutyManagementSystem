@@ -196,6 +196,49 @@ export interface RosterGenerateResult {
   skipped: RosterDayPlan[];
 }
 
+export type PayLineType = "WEEKDAY" | "WEEKEND" | "HOLIDAY";
+
+export interface DailyDutyEntry {
+  date: string;
+  weekday: Weekday;
+  employeeId: string;
+  employeeName: string;
+  isWeekend: boolean;
+  isHoliday: boolean;
+  holidayName: string | null;
+}
+
+export interface PayLine {
+  type: PayLineType;
+  employeeId: string;
+  employeeName: string;
+  startDate: string;
+  endDate: string;
+  amount: number;
+}
+
+export interface EmployeeSummary {
+  employeeId: string;
+  employeeName: string;
+  daysWorked: number;
+  totalPay: number;
+}
+
+export interface MonthlyReport {
+  teamId: string;
+  teamName: string;
+  year: number;
+  month: number;
+  daysInMonth: number;
+  dailyEntries: DailyDutyEntry[];
+  payLines: PayLine[];
+  employeeSummaries: EmployeeSummary[];
+  totals: {
+    daysCovered: number;
+    totalPay: number;
+  };
+}
+
 export const api = {
   //
   // Dashboard
@@ -375,4 +418,18 @@ export const api = {
         overwrite,
       }),
     }),
+
+  //
+  // Reports
+  //
+  monthlyReport: (
+    teamId: string,
+    year: number,
+    month: number,
+  ) =>
+    request<MonthlyReport>(
+      `/reports/monthly?teamId=${encodeURIComponent(
+        teamId,
+      )}&year=${year}&month=${month}`,
+    ),
 };

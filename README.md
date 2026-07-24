@@ -93,14 +93,22 @@ Designed for organizations that need a simple overview of personnel, teams, duty
 
 ![Lightmode](docs/images/Lightmode.png)
 ![Darkmode](docs/images/Darkmode.png)
+
+---
+
+### Reports
+
+- Monthly, per-team report: days covered, who had duty when, and full duty pay breakdown
+- Duty pay rates: **1250 DKK** per weekday duty, **6000 DKK** flat per weekend duty block (Fri–Sun covered by the same person, however many days), **2250 DKK** for a duty on a company-wide holiday — weekend pay wins if a holiday falls on a weekend day
+- Per-employee summary (days worked, total pay) alongside the full daily duty log
+- Export to Excel (.xlsx, multi-sheet) and PDF
+
 ---
 
 ## Planned Features
 
 - Duty conflict detection (e.g. double-booking, missing rotation members)
 - Employee availability
-- Reporting
-- PDF / Excel export
 - Email notifications
 - Audit log
 - Authentication
@@ -190,7 +198,7 @@ npm run dev
 | Schedule | ✅ |
 | Roster Engine | ✅ |
 | Holidays | ✅ |
-| Reports | ⏳ |
+| Reports | ✅ |
 | Settings | ⏳ |
 
 ---

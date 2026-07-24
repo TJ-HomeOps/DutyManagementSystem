@@ -1,0 +1,725 @@
+import { useEffect, useMemo, useState } from "react";
+
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  MenuItem,
+  Paper,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
+
+import DownloadIcon from "@mui/icons-material/Download";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+
+import { jsPDF } from "jspdf";
+import { autoTable } from "jspdf-autotable";
+import ExcelJS from "exceljs";
+
+import { api } from "../services/api";
+import type {
+  MonthlyReport,
+  PayLineType,
+  Team,
+} from "../services/api";
+
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+const WEEKDAY_LABELS: Record<string, string> = {
+  MONDAY: "Mon",
+  TUESDAY: "Tue",
+  WEDNESDAY: "Wed",
+  THURSDAY: "Thu",
+  FRIDAY: "Fri",
+  SATURDAY: "Sat",
+  SUNDAY: "Sun",
+};
+
+const PAY_TYPE_LABELS: Record<PayLineType, string> = {
+  WEEKDAY: "Weekday",
+  WEEKEND: "Weekend",
+  HOLIDAY: "Holiday",
+};
+
+const currencyFormatter = new Intl.NumberFormat("da-DK", {
+  style: "currency",
+  currency: "DKK",
+  maximumFractionDigits: 0,
+});
+
+function formatDateRange(start: string, end: string): string {
+  return start === end ? start : `${start} – ${end}`;
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = filename;
+  link.click();
+
+  URL.revokeObjectURL(url);
+}
+
+export default function Reports() {
+  const now = new Date();
+  const theme = useTheme();
+
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [teamId, setTeamId] = useState("");
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth() + 1);
+
+  const [report, setReport] = useState<MonthlyReport | null>(
+    null,
+  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    api.teams()
+      .then((data) => {
+        setTeams(data);
+
+        if (data.length > 0) {
+          setTeamId(data[0].id);
+        }
+      })
+      .catch(() => setError("Unable to load teams."));
+  }, []);
+
+  useEffect(() => {
+    if (!teamId) return;
+
+    let cancelled = false;
+
+    async function load() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const data = await api.monthlyReport(
+          teamId,
+          year,
+          month,
+        );
+
+        if (!cancelled) {
+          setReport(data);
+        }
+      } catch (err) {
+        console.error(err);
+
+        if (!cancelled) {
+          setError("Unable to load report.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [teamId, year, month]);
+
+  const monthTitle = useMemo(
+    () => `${MONTH_NAMES[month - 1]} ${year}`,
+    [month, year],
+  );
+
+  const filenameBase = useMemo(() => {
+    if (!report) return "duty-report";
+
+    const safeTeam = report.teamName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-");
+
+    return `duty-report-${safeTeam}-${year}-${String(
+      month,
+    ).padStart(2, "0")}`;
+  }, [report, year, month]);
+
+  async function handleExportExcel() {
+    if (!report) return;
+
+    const workbook = new ExcelJS.Workbook();
+
+    const summarySheet = workbook.addWorksheet("Summary");
+
+    summarySheet.columns = [
+      { header: "Employee", key: "employee", width: 24 },
+      { header: "Days Worked", key: "days", width: 14 },
+      { header: "Total Pay (DKK)", key: "pay", width: 16 },
+    ];
+
+    for (const s of report.employeeSummaries) {
+      summarySheet.addRow({
+        employee: s.employeeName,
+        days: s.daysWorked,
+        pay: s.totalPay,
+      });
+    }
+
+    summarySheet.addRow({});
+    summarySheet.addRow({
+      employee: "Total",
+      days: report.totals.daysCovered,
+      pay: report.totals.totalPay,
+    });
+    summarySheet.getRow(summarySheet.rowCount).font = {
+      bold: true,
+    };
+
+    const paySheet = workbook.addWorksheet("Duty Pay");
+
+    paySheet.columns = [
+      { header: "Type", key: "type", width: 12 },
+      { header: "Employee", key: "employee", width: 24 },
+      { header: "Start Date", key: "start", width: 14 },
+      { header: "End Date", key: "end", width: 14 },
+      { header: "Amount (DKK)", key: "amount", width: 14 },
+    ];
+
+    for (const line of report.payLines) {
+      paySheet.addRow({
+        type: PAY_TYPE_LABELS[line.type],
+        employee: line.employeeName,
+        start: line.startDate,
+        end: line.endDate,
+        amount: line.amount,
+      });
+    }
+
+    const dailySheet = workbook.addWorksheet("Daily Duty");
+
+    dailySheet.columns = [
+      { header: "Date", key: "date", width: 14 },
+      { header: "Weekday", key: "weekday", width: 12 },
+      { header: "Employee", key: "employee", width: 24 },
+      { header: "Holiday", key: "holiday", width: 24 },
+    ];
+
+    for (const entry of report.dailyEntries) {
+      dailySheet.addRow({
+        date: entry.date,
+        weekday: WEEKDAY_LABELS[entry.weekday],
+        employee: entry.employeeName,
+        holiday: entry.holidayName ?? "",
+      });
+    }
+
+    for (const sheet of workbook.worksheets) {
+      sheet.getRow(1).font = { bold: true };
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer();
+
+    downloadBlob(
+      new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      }),
+      `${filenameBase}.xlsx`,
+    );
+  }
+
+  function handleExportPdf() {
+    if (!report) return;
+
+    const doc = new jsPDF();
+
+    doc.setFontSize(14);
+    doc.text(
+      `Duty Report — ${report.teamName} — ${monthTitle}`,
+      14,
+      15,
+    );
+
+    doc.setFontSize(10);
+    doc.text(
+      `Days covered: ${report.totals.daysCovered} / ${report.daysInMonth}    Total pay: ${currencyFormatter.format(report.totals.totalPay)}`,
+      14,
+      22,
+    );
+
+    autoTable(doc, {
+      startY: 28,
+      head: [["Employee", "Days Worked", "Total Pay"]],
+      body: report.employeeSummaries.map((s) => [
+        s.employeeName,
+        String(s.daysWorked),
+        currencyFormatter.format(s.totalPay),
+      ]),
+      headStyles: { fillColor: [10, 77, 140] },
+      styles: { fontSize: 9 },
+    });
+
+    const afterSummaryY =
+      (
+        doc as unknown as {
+          lastAutoTable: { finalY: number };
+        }
+      ).lastAutoTable.finalY + 8;
+
+    doc.setFontSize(11);
+    doc.text("Duty Pay", 14, afterSummaryY);
+
+    autoTable(doc, {
+      startY: afterSummaryY + 3,
+      head: [["Type", "Employee", "Dates", "Amount"]],
+      body: report.payLines.map((line) => [
+        PAY_TYPE_LABELS[line.type],
+        line.employeeName,
+        formatDateRange(line.startDate, line.endDate),
+        currencyFormatter.format(line.amount),
+      ]),
+      headStyles: { fillColor: [10, 77, 140] },
+      styles: { fontSize: 8 },
+    });
+
+    doc.addPage();
+    doc.setFontSize(11);
+    doc.text(
+      `Daily Duty Log — ${report.teamName} — ${monthTitle}`,
+      14,
+      15,
+    );
+
+    autoTable(doc, {
+      startY: 20,
+      head: [["Date", "Weekday", "Employee", "Holiday"]],
+      body: report.dailyEntries.map((entry) => [
+        entry.date,
+        WEEKDAY_LABELS[entry.weekday],
+        entry.employeeName,
+        entry.holidayName ?? "",
+      ]),
+      headStyles: { fillColor: [10, 77, 140] },
+      styles: { fontSize: 8 },
+    });
+
+    doc.save(`${filenameBase}.pdf`);
+  }
+
+  return (
+    <Box>
+      <Stack
+        direction={{ xs: "column", md: "row" }}
+        justifyContent="space-between"
+        alignItems={{ xs: "flex-start", md: "center" }}
+        spacing={2}
+        mb={4}
+      >
+        <Box>
+          <Typography variant="h4" fontWeight={700}>
+            Reports
+          </Typography>
+
+          <Typography color="text.secondary">
+            Monthly duty coverage and pay breakdown.
+          </Typography>
+        </Box>
+      </Stack>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
+      <Paper
+        elevation={0}
+        sx={{
+          border: "1px solid",
+          borderColor: "divider",
+          borderRadius: 3,
+          p: 3,
+          mb: 3,
+        }}
+      >
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={2}
+          alignItems={{ xs: "stretch", sm: "center" }}
+        >
+          <TextField
+            select
+            label="Team"
+            value={teamId}
+            onChange={(e) => setTeamId(e.target.value)}
+            sx={{ minWidth: 200 }}
+          >
+            {teams.map((team) => (
+              <MenuItem key={team.id} value={team.id}>
+                {team.name}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          <TextField
+            select
+            label="Month"
+            value={month}
+            onChange={(e) => setMonth(Number(e.target.value))}
+            sx={{ minWidth: 160 }}
+          >
+            {MONTH_NAMES.map((name, index) => (
+              <MenuItem key={name} value={index + 1}>
+                {name}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          <TextField
+            type="number"
+            label="Year"
+            value={year}
+            onChange={(e) => setYear(Number(e.target.value))}
+            sx={{ minWidth: 120 }}
+          />
+
+          <Box flex={1} />
+
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            disabled={!report || loading}
+            onClick={handleExportExcel}
+          >
+            Export Excel
+          </Button>
+
+          <Button
+            variant="contained"
+            startIcon={<PictureAsPdfIcon />}
+            disabled={!report || loading}
+            onClick={handleExportPdf}
+          >
+            Export PDF
+          </Button>
+        </Stack>
+      </Paper>
+
+      {loading ? (
+        <Box display="flex" justifyContent="center" py={6}>
+          <CircularProgress />
+        </Box>
+      ) : report ? (
+        <>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={2}
+            mb={3}
+          >
+            <Paper
+              elevation={0}
+              sx={{
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 3,
+                p: 3,
+                flex: 1,
+              }}
+            >
+              <Typography color="text.secondary" gutterBottom>
+                Days Covered
+              </Typography>
+
+              <Typography
+                variant="h4"
+                fontWeight={700}
+                color="primary.main"
+              >
+                {report.totals.daysCovered} /{" "}
+                {report.daysInMonth}
+              </Typography>
+            </Paper>
+
+            <Paper
+              elevation={0}
+              sx={{
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 3,
+                p: 3,
+                flex: 1,
+              }}
+            >
+              <Typography color="text.secondary" gutterBottom>
+                Total Pay
+              </Typography>
+
+              <Typography
+                variant="h4"
+                fontWeight={700}
+                color="primary.main"
+              >
+                {currencyFormatter.format(
+                  report.totals.totalPay,
+                )}
+              </Typography>
+            </Paper>
+          </Stack>
+
+          <Typography variant="h6" fontWeight={700} mb={2}>
+            Employee Summary
+          </Typography>
+
+          <Paper
+            elevation={0}
+            sx={{
+              border: "1px solid",
+              borderColor: "divider",
+              borderRadius: 3,
+              overflow: "hidden",
+              mb: 4,
+            }}
+          >
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Employee</TableCell>
+                    <TableCell align="right">
+                      Days Worked
+                    </TableCell>
+                    <TableCell align="right">
+                      Total Pay
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+
+                <TableBody>
+                  {report.employeeSummaries.map((s) => (
+                    <TableRow key={s.employeeId} hover>
+                      <TableCell>{s.employeeName}</TableCell>
+                      <TableCell align="right">
+                        {s.daysWorked}
+                      </TableCell>
+                      <TableCell align="right">
+                        {currencyFormatter.format(s.totalPay)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+
+                  {report.employeeSummaries.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={3} align="center">
+                        <Typography
+                          color="text.secondary"
+                          py={3}
+                        >
+                          No duties recorded for this month.
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
+
+          <Typography variant="h6" fontWeight={700} mb={2}>
+            Duty Pay
+          </Typography>
+
+          <Paper
+            elevation={0}
+            sx={{
+              border: "1px solid",
+              borderColor: "divider",
+              borderRadius: 3,
+              overflow: "hidden",
+              mb: 4,
+            }}
+          >
+            <TableContainer sx={{ maxHeight: 480 }}>
+              <Table size="small" stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Type</TableCell>
+                    <TableCell>Employee</TableCell>
+                    <TableCell>Dates</TableCell>
+                    <TableCell align="right">
+                      Amount
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+
+                <TableBody>
+                  {report.payLines.map((line, index) => (
+                    <TableRow
+                      key={`${line.employeeId}-${line.startDate}-${index}`}
+                      hover
+                    >
+                      <TableCell>
+                        <Chip
+                          size="small"
+                          label={
+                            PAY_TYPE_LABELS[line.type]
+                          }
+                          sx={{
+                            bgcolor:
+                              line.type === "WEEKEND"
+                                ? alpha(
+                                    theme.palette.primary
+                                      .main,
+                                    0.14,
+                                  )
+                                : line.type === "HOLIDAY"
+                                  ? alpha(
+                                      theme.palette.warning
+                                        .main,
+                                      0.16,
+                                    )
+                                  : theme.palette.action
+                                      .selected,
+                            color:
+                              line.type === "WEEKEND"
+                                ? theme.palette.primary.main
+                                : line.type === "HOLIDAY"
+                                  ? theme.palette.warning.dark
+                                  : theme.palette.text
+                                      .secondary,
+                            fontWeight: 600,
+                          }}
+                        />
+                      </TableCell>
+
+                      <TableCell>
+                        {line.employeeName}
+                      </TableCell>
+
+                      <TableCell>
+                        {formatDateRange(
+                          line.startDate,
+                          line.endDate,
+                        )}
+                      </TableCell>
+
+                      <TableCell align="right">
+                        {currencyFormatter.format(
+                          line.amount,
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+
+                  {report.payLines.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4} align="center">
+                        <Typography
+                          color="text.secondary"
+                          py={3}
+                        >
+                          No duties recorded for this month.
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
+
+          <Typography variant="h6" fontWeight={700} mb={2}>
+            Daily Duty Log
+          </Typography>
+
+          <Paper
+            elevation={0}
+            sx={{
+              border: "1px solid",
+              borderColor: "divider",
+              borderRadius: 3,
+              overflow: "hidden",
+            }}
+          >
+            <TableContainer sx={{ maxHeight: 480 }}>
+              <Table size="small" stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Date</TableCell>
+                    <TableCell>Weekday</TableCell>
+                    <TableCell>Employee</TableCell>
+                    <TableCell>Holiday</TableCell>
+                  </TableRow>
+                </TableHead>
+
+                <TableBody>
+                  {report.dailyEntries.map((entry) => (
+                    <TableRow key={entry.date} hover>
+                      <TableCell>{entry.date}</TableCell>
+
+                      <TableCell>
+                        {WEEKDAY_LABELS[entry.weekday]}
+                      </TableCell>
+
+                      <TableCell>
+                        {entry.employeeName}
+                      </TableCell>
+
+                      <TableCell>
+                        {entry.holidayName ?? (
+                          <Typography
+                            component="span"
+                            color="text.secondary"
+                            variant="body2"
+                          >
+                            —
+                          </Typography>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+
+                  {report.dailyEntries.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4} align="center">
+                        <Typography
+                          color="text.secondary"
+                          py={3}
+                        >
+                          No duties recorded for this month.
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
+        </>
+      ) : null}
+    </Box>
+  );
+}

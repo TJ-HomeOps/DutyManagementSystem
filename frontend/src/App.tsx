@@ -14,6 +14,7 @@ import Roster from "./pages/Roster";
 import Holidays from "./pages/Holidays";
 import Teams from "./pages/Teams";
 import DutyRules from "./pages/DutyRules";
+import Reports from "./pages/Reports";
 
 function Placeholder({ title }: { title: string }) {
   return (
@@ -66,7 +67,7 @@ export default function App() {
 
           <Route
             path="/reports"
-            element={<Placeholder title="Reports" />}
+            element={<Reports />}
           />
 
           <Route
