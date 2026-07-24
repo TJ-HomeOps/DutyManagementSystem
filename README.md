@@ -52,6 +52,8 @@ Designed for organizations that need a simple overview of personnel, teams, duty
 - Optional overwrite of existing assignments when a rule changes
 - Idempotent — re-running never duplicates assignments
 
+  ![Roster](docs/images/Roster.png)
+
 ---
 
 ### Holidays
@@ -59,6 +61,8 @@ Designed for organizations that need a simple overview of personnel, teams, duty
 - Company-wide or per-employee holidays, as single days or multi-day ranges
 - Overlap detection prevents duplicate/conflicting entries per employee
 - Roster generation automatically skips any day covered by a matching holiday, so affected days stay unassigned for manual handling
+
+![Holidays](docs/images/Holidays.png)
 
 ---
 
@@ -68,6 +72,8 @@ Designed for organizations that need a simple overview of personnel, teams, duty
 - Color is used consistently across Employees, Schedule, Roster and Duty Rules
 - Deletion is blocked with a clear message while a team still has employees, duty rules, or assignments linked to it
 
+![Teams](docs/images/Teams.png)
+
 ---
 
 ### Duty Rules
@@ -76,6 +82,8 @@ Designed for organizations that need a simple overview of personnel, teams, duty
 - Filterable by team, with duplicate team/weekday rules rejected
 - Directly drives Roster Generation
 
+![Duty Rules](docs/images/Dutyrules.png)
+
 ---
 
 ### Light / Dark Mode
@@ -83,6 +91,8 @@ Designed for organizations that need a simple overview of personnel, teams, duty
 - Toggle in the top bar, with the choice persisted and the OS preference respected on first load
 - Full theme system — all pages and layout chrome adapt, not just a background swap
 
+![Lightmode](docs/images/Lightmode.png)
+![Darkmode](docs/images/Darkmode.png)
 ---
 
 ## Planned Features
