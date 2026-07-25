@@ -457,7 +457,7 @@ export default function Holidays() {
                             label={holiday.employee.name}
                             sx={(theme) => ({
                               bgcolor:
-                                holiday.employee!.team.color ??
+                                holiday.employee?.team?.color ??
                                 theme.palette.primary.main,
                               color: "#FFFFFF",
                               fontWeight: 700,

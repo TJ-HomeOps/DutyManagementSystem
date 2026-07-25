@@ -48,14 +48,14 @@ export class HolidaysService {
         name: data.name,
         employeeId,
       },
-      include: { employee: true },
+      include: { employee: { include: { team: true } } },
     });
   }
 
   findAll(employeeId?: string) {
     return this.prisma.holiday.findMany({
       where: employeeId ? { employeeId } : undefined,
-      include: { employee: true },
+      include: { employee: { include: { team: true } } },
       orderBy: { startDate: 'asc' },
     });
   }
@@ -66,7 +66,7 @@ export class HolidaysService {
         startDate: { lte: end },
         endDate: { gte: start },
       },
-      include: { employee: true },
+      include: { employee: { include: { team: true } } },
       orderBy: { startDate: 'asc' },
     });
   }
@@ -74,7 +74,7 @@ export class HolidaysService {
   async findOne(id: string) {
     const holiday = await this.prisma.holiday.findUnique({
       where: { id },
-      include: { employee: true },
+      include: { employee: { include: { team: true } } },
     });
 
     if (!holiday) {
@@ -107,7 +107,7 @@ export class HolidaysService {
     return this.prisma.holiday.update({
       where: { id },
       data: { ...data, startDate, endDate },
-      include: { employee: true },
+      include: { employee: { include: { team: true } } },
     });
   }
 
