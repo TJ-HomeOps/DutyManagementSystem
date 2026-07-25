@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
 import { PrismaModule } from './prisma/prisma.module';
+import { AuthModule } from './auth/auth.module';
 import { TeamsModule } from './teams/teams.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { EmployeesModule } from './employees/employees.module';
@@ -21,6 +22,7 @@ import { ReportsModule } from './reports/reports.module';
       isGlobal: true,
     }),
     PrismaModule,
+    AuthModule,
     TeamsModule,
     DashboardModule,
     EmployeesModule,

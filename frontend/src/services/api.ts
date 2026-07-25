@@ -6,6 +6,10 @@ async function request<T>(
   options?: RequestInit,
 ): Promise<T> {
   const response = await fetch(`${API_BASE}${endpoint}`, {
+    // "include" rather than the same-origin default: the session cookie for
+    // the password lock must still be sent if VITE_API_URL ever points at a
+    // different origin than the page (the backend's CORS config allows this).
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(options?.headers ?? {}),
@@ -14,8 +18,23 @@ async function request<T>(
   });
 
   if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `API Error ${response.status}`);
+    const body = await response.text();
+
+    // Nest's error responses are JSON ({ message, error, statusCode });
+    // unwrap that instead of surfacing the raw body to the user.
+    let message = "";
+
+    try {
+      message =
+        (JSON.parse(body) as { message?: string }).message ??
+        "";
+    } catch {
+      // Not JSON; fall back to the raw text below.
+    }
+
+    throw new Error(
+      message || body || `API Error ${response.status}`,
+    );
   }
 
   if (response.status === 204) {
@@ -239,6 +258,10 @@ export interface DutyReport {
   };
 }
 
+export interface AuthStatus {
+  enabled: boolean;
+}
+
 export const api = {
   //
   // Dashboard
@@ -430,4 +453,30 @@ export const api = {
         start,
       )}&end=${encodeURIComponent(end)}`,
     ),
+
+  //
+  // Auth (app-wide password lock)
+  //
+  authStatus: () =>
+    request<AuthStatus>("/auth/status"),
+
+  authSession: () =>
+    request<{ ok: true }>("/auth/session"),
+
+  login: (password: string) =>
+    request<{ ok: true }>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ password }),
+    }),
+
+  enableLock: (password: string) =>
+    request<{ ok: true }>("/auth/enable", {
+      method: "POST",
+      body: JSON.stringify({ password }),
+    }),
+
+  disableLock: () =>
+    request<{ ok: true }>("/auth/disable", {
+      method: "POST",
+    }),
 };

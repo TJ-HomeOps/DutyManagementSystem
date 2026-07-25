@@ -14,7 +14,13 @@ async function bootstrap() {
     }),
   );
 
-  app.enableCors();
+  // Reflects the request origin instead of a wildcard so the session cookie
+  // (credentials) still works if the frontend ever calls this API
+  // cross-origin instead of through a same-origin proxy.
+  app.enableCors({
+    origin: true,
+    credentials: true,
+  });
 
   await app.listen(process.env.PORT ?? 3001);
 

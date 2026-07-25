@@ -6,6 +6,7 @@ import {
 } from "react-router-dom";
 
 import AppLayout from "./layout/AppLayout";
+import AuthGate from "./auth/AuthGate";
 
 import Dashboard from "./pages/Dashboard";
 import Employees from "./pages/Employees";
@@ -15,72 +16,66 @@ import Holidays from "./pages/Holidays";
 import Teams from "./pages/Teams";
 import DutyRules from "./pages/DutyRules";
 import Reports from "./pages/Reports";
-
-function Placeholder({ title }: { title: string }) {
-  return (
-    <>
-      <h2>{title}</h2>
-      <p>{title} page is under construction.</p>
-    </>
-  );
-}
+import Settings from "./pages/Settings";
 
 export default function App() {
   return (
     <BrowserRouter>
-      <AppLayout>
-        <Routes>
-          <Route
-            path="/"
-            element={<Dashboard />}
-          />
+      <AuthGate>
+        <AppLayout>
+          <Routes>
+            <Route
+              path="/"
+              element={<Dashboard />}
+            />
 
-          <Route
-            path="/employees"
-            element={<Employees />}
-          />
+            <Route
+              path="/employees"
+              element={<Employees />}
+            />
 
-          <Route
-            path="/schedule"
-            element={<Schedule />}
-          />
+            <Route
+              path="/schedule"
+              element={<Schedule />}
+            />
 
-          <Route
-            path="/roster"
-            element={<Roster />}
-          />
+            <Route
+              path="/roster"
+              element={<Roster />}
+            />
 
-          <Route
-            path="/holidays"
-            element={<Holidays />}
-          />
+            <Route
+              path="/holidays"
+              element={<Holidays />}
+            />
 
-          <Route
-            path="/teams"
-            element={<Teams />}
-          />
+            <Route
+              path="/teams"
+              element={<Teams />}
+            />
 
-          <Route
-            path="/rules"
-            element={<DutyRules />}
-          />
+            <Route
+              path="/rules"
+              element={<DutyRules />}
+            />
 
-          <Route
-            path="/reports"
-            element={<Reports />}
-          />
+            <Route
+              path="/reports"
+              element={<Reports />}
+            />
 
-          <Route
-            path="/settings"
-            element={<Placeholder title="Settings" />}
-          />
+            <Route
+              path="/settings"
+              element={<Settings />}
+            />
 
-          <Route
-            path="*"
-            element={<Navigate to="/" replace />}
-          />
-        </Routes>
-      </AppLayout>
+            <Route
+              path="*"
+              element={<Navigate to="/" replace />}
+            />
+          </Routes>
+        </AppLayout>
+      </AuthGate>
     </BrowserRouter>
   );
 }

@@ -93,6 +93,23 @@ model Holiday {
   @@index([employeeId])
 }
 
+// Single-row settings table for the app-wide password lock. There is no
+// per-user auth, so this is a shared password gating the whole app rather
+// than a users table.
+model AppSettings {
+  id Int @id @default(1)
+
+  lockEnabled  Boolean @default(false)
+  passwordHash String?
+
+  // Generated once and never exposed. Session tokens are
+  // hmac(serverSecret, passwordHash), so rotating the password
+  // automatically invalidates every previously issued session.
+  serverSecret String
+
+  updatedAt DateTime @updatedAt
+}
+
 model DutyAssignment {
   id String @id @default(cuid())
 
