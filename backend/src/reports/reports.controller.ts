@@ -1,4 +1,9 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Query,
+} from '@nestjs/common';
 
 import { ReportsService } from './reports.service';
 
@@ -6,23 +11,24 @@ import { ReportsService } from './reports.service';
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
-  @Get('monthly')
-  async getMonthlyReport(
+  @Get('range')
+  async getReport(
     @Query('teamId') teamId: string,
-    @Query('year') year: string,
-    @Query('month') month: string,
+    @Query('start') start: string,
+    @Query('end') end: string,
   ) {
     if (!teamId) {
-      throw new Error('teamId query parameter is required.');
+      throw new BadRequestException(
+        'teamId query parameter is required.',
+      );
     }
 
-    const y = Number(year);
-    const m = Number(month);
-
-    if (Number.isNaN(y) || Number.isNaN(m) || m < 1 || m > 12) {
-      throw new Error('Invalid year or month supplied.');
+    if (!start || !end) {
+      throw new BadRequestException(
+        'start and end query parameters are required.',
+      );
     }
 
-    return this.reportsService.getMonthlyReport(teamId, y, m);
+    return this.reportsService.getReport(teamId, start, end);
   }
 }

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -48,12 +49,9 @@ export interface EmployeeSummary {
   totalPay: number;
 }
 
-export interface MonthlyReport {
+export interface DutyReport {
   teamId: string;
   teamName: string;
-  year: number;
-  month: number;
-  payPeriodStartDay: number;
   periodStart: string;
   periodEnd: string;
   periodDays: number;
@@ -65,6 +63,8 @@ export interface MonthlyReport {
     totalPay: number;
   };
 }
+
+const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 function isWeekendDay(jsDay: number): boolean {
   return jsDay === 5 || jsDay === 6 || jsDay === 0;
@@ -85,6 +85,18 @@ function parseDateKey(key: string): Date {
   return new Date(year, month - 1, day, 12, 0, 0, 0);
 }
 
+function startOfDayFromKey(key: string): Date {
+  const [year, month, day] = key.split('-').map(Number);
+
+  return new Date(year, month - 1, day, 0, 0, 0, 0);
+}
+
+function endOfDayFromKey(key: string): Date {
+  const [year, month, day] = key.split('-').map(Number);
+
+  return new Date(year, month - 1, day, 23, 59, 59, 999);
+}
+
 function isNextCalendarDay(
   fromKey: string,
   toKey: string,
@@ -100,11 +112,26 @@ function isNextCalendarDay(
 export class ReportsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getMonthlyReport(
+  async getReport(
     teamId: string,
-    year: number,
-    month: number,
-  ): Promise<MonthlyReport> {
+    startDateKey: string,
+    endDateKey: string,
+  ): Promise<DutyReport> {
+    if (
+      !DATE_KEY_PATTERN.test(startDateKey) ||
+      !DATE_KEY_PATTERN.test(endDateKey)
+    ) {
+      throw new BadRequestException(
+        'start and end must be dates in YYYY-MM-DD format.',
+      );
+    }
+
+    if (endDateKey < startDateKey) {
+      throw new BadRequestException(
+        'end must not be before start.',
+      );
+    }
+
     const team = await this.prisma.team.findUnique({
       where: { id: teamId },
     });
@@ -113,41 +140,14 @@ export class ReportsService {
       throw new NotFoundException('Team not found.');
     }
 
-    // A period runs from payPeriodStartDay of the selected month through the
-    // day before it in the following month, e.g. day 20 covers the 20th
-    // through the 19th of next month. day 1 reproduces a calendar month: the
-    // "day 0 of next month" trick below already resolves to the last day of
-    // the current month in that case.
-    const startDay = team.payPeriodStartDay;
-    const periodStart = new Date(
-      year,
-      month - 1,
-      startDay,
-      0,
-      0,
-      0,
-      0,
-    );
-    const periodEnd = new Date(
-      year,
-      month,
-      startDay - 1,
-      23,
-      59,
-      59,
-      999,
-    );
-    // Counted against midnight of the end date, not periodEnd itself: using
-    // the 23:59:59.999 timestamp would add most of an extra day before the
-    // +1 below even applies, double-counting the last day.
-    const periodEndDateOnly = new Date(
-      year,
-      month,
-      startDay - 1,
-    );
+    const periodStart = startOfDayFromKey(startDateKey);
+    const periodEnd = endOfDayFromKey(endDateKey);
+    // Counted against midnight of both boundaries, not periodEnd's
+    // 23:59:59.999: using that timestamp would add most of an extra day
+    // before the +1 below even applies, double-counting the last day.
     const periodDays =
       Math.round(
-        (periodEndDateOnly.getTime() -
+        (startOfDayFromKey(endDateKey).getTime() -
           periodStart.getTime()) /
           (24 * 60 * 60 * 1000),
       ) + 1;
@@ -310,11 +310,8 @@ export class ReportsService {
     return {
       teamId,
       teamName: team.name,
-      year,
-      month,
-      payPeriodStartDay: startDay,
-      periodStart: dateKey(periodStart),
-      periodEnd: dateKey(periodEnd),
+      periodStart: startDateKey,
+      periodEnd: endDateKey,
       periodDays,
       dailyEntries,
       payLines,

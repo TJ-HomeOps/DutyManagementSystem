@@ -1,11 +1,8 @@
 import {
   IsHexColor,
-  IsInt,
   IsOptional,
   IsString,
-  Max,
   MaxLength,
-  Min,
 } from 'class-validator';
 
 export class CreateTeamDto {
@@ -21,12 +18,4 @@ export class CreateTeamDto {
   @IsOptional()
   @IsHexColor()
   color?: string;
-
-  // Capped at 28 so the period start date is guaranteed to exist in every
-  // month, including February, without date rollover.
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Max(28)
-  payPeriodStartDay?: number;
 }

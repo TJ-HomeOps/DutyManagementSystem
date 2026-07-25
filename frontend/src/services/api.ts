@@ -41,7 +41,6 @@ export interface Team {
   name: string;
   description: string | null;
   color: string | null;
-  payPeriodStartDay: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -50,14 +49,12 @@ export interface CreateTeamDto {
   name: string;
   description?: string;
   color?: string;
-  payPeriodStartDay?: number;
 }
 
 export interface UpdateTeamDto {
   name?: string;
   description?: string;
   color?: string;
-  payPeriodStartDay?: number;
 }
 
 export interface Employee {
@@ -227,12 +224,9 @@ export interface EmployeeSummary {
   totalPay: number;
 }
 
-export interface MonthlyReport {
+export interface DutyReport {
   teamId: string;
   teamName: string;
-  year: number;
-  month: number;
-  payPeriodStartDay: number;
   periodStart: string;
   periodEnd: string;
   periodDays: number;
@@ -428,14 +422,12 @@ export const api = {
   //
   // Reports
   //
-  monthlyReport: (
-    teamId: string,
-    year: number,
-    month: number,
-  ) =>
-    request<MonthlyReport>(
-      `/reports/monthly?teamId=${encodeURIComponent(
+  report: (teamId: string, start: string, end: string) =>
+    request<DutyReport>(
+      `/reports/range?teamId=${encodeURIComponent(
         teamId,
-      )}&year=${year}&month=${month}`,
+      )}&start=${encodeURIComponent(
+        start,
+      )}&end=${encodeURIComponent(end)}`,
     ),
 };

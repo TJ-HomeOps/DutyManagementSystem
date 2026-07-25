@@ -29,7 +29,7 @@ import ExcelJS from "exceljs";
 
 import { api } from "../services/api";
 import type {
-  MonthlyReport,
+  DutyReport,
   PayLineType,
   Team,
 } from "../services/api";
@@ -81,6 +81,15 @@ function parseLocalDateKey(key: string): Date {
   return new Date(year, month - 1, day);
 }
 
+function formatDateKey(date: Date): string {
+  return `${date.getFullYear()}-${String(
+    date.getMonth() + 1,
+  ).padStart(2, "0")}-${String(date.getDate()).padStart(
+    2,
+    "0",
+  )}`;
+}
+
 function formatPeriodLabel(
   periodStart: string,
   periodEnd: string,
@@ -121,32 +130,41 @@ function downloadBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-export default function Reports() {
+function defaultPeriod(): { from: string; to: string } {
   const now = new Date();
+  const firstOfMonth = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    1,
+  );
+  const lastOfMonth = new Date(
+    now.getFullYear(),
+    now.getMonth() + 1,
+    0,
+  );
+
+  return {
+    from: formatDateKey(firstOfMonth),
+    to: formatDateKey(lastOfMonth),
+  };
+}
+
+export default function Reports() {
   const theme = useTheme();
 
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamId, setTeamId] = useState("");
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth() + 1);
 
-  // Draft text for the period-start-day field, kept separate from the saved
-  // value so the input isn't clobbered while the user is mid-edit.
-  const [periodStartDayDraft, setPeriodStartDayDraft] =
-    useState("1");
-  const [savingPeriodStartDay, setSavingPeriodStartDay] =
-    useState(false);
+  const [{ from: fromDate, to: toDate }, setPeriod] =
+    useState(defaultPeriod);
 
-  const [report, setReport] = useState<MonthlyReport | null>(
+  const [report, setReport] = useState<DutyReport | null>(
     null,
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const selectedTeam = useMemo(
-    () => teams.find((team) => team.id === teamId) ?? null,
-    [teams, teamId],
-  );
+  const rangeInvalid = toDate < fromDate;
 
   useEffect(() => {
     api.teams()
@@ -161,15 +179,13 @@ export default function Reports() {
   }, []);
 
   useEffect(() => {
-    if (selectedTeam) {
-      setPeriodStartDayDraft(
-        String(selectedTeam.payPeriodStartDay),
-      );
-    }
-  }, [selectedTeam]);
-
-  useEffect(() => {
     if (!teamId) return;
+
+    if (rangeInvalid) {
+      setReport(null);
+      setError("End date must not be before start date.");
+      return;
+    }
 
     let cancelled = false;
 
@@ -178,10 +194,10 @@ export default function Reports() {
         setLoading(true);
         setError("");
 
-        const data = await api.monthlyReport(
+        const data = await api.report(
           teamId,
-          year,
-          month,
+          fromDate,
+          toDate,
         );
 
         if (!cancelled) {
@@ -205,49 +221,8 @@ export default function Reports() {
     return () => {
       cancelled = true;
     };
-    // selectedTeam?.payPeriodStartDay isn't sent to the API directly, but the
-    // backend derives the report period from it, so a change here means the
-    // previously loaded report is for the wrong period and must be refetched.
-  }, [teamId, year, month, selectedTeam?.payPeriodStartDay]);
+  }, [teamId, fromDate, toDate, rangeInvalid]);
 
-  async function commitPeriodStartDay() {
-    if (!selectedTeam) return;
-
-    const parsed = Number(periodStartDayDraft);
-    const clamped = Number.isFinite(parsed)
-      ? Math.min(28, Math.max(1, Math.round(parsed)))
-      : selectedTeam.payPeriodStartDay;
-
-    setPeriodStartDayDraft(String(clamped));
-
-    if (clamped === selectedTeam.payPeriodStartDay) return;
-
-    try {
-      setSavingPeriodStartDay(true);
-      setError("");
-
-      const updated = await api.updateTeam(selectedTeam.id, {
-        payPeriodStartDay: clamped,
-      });
-
-      setTeams((prev) =>
-        prev.map((team) =>
-          team.id === updated.id ? updated : team,
-        ),
-      );
-    } catch (err) {
-      console.error(err);
-      setError("Unable to update the pay period start day.");
-      setPeriodStartDayDraft(
-        String(selectedTeam.payPeriodStartDay),
-      );
-    } finally {
-      setSavingPeriodStartDay(false);
-    }
-  }
-
-  // The report period no longer always matches a calendar month, so prefer
-  // the actual start/end dates once a report has loaded.
   const periodTitle = useMemo(() => {
     if (report) {
       return formatPeriodLabel(
@@ -256,8 +231,12 @@ export default function Reports() {
       );
     }
 
-    return `${MONTH_NAMES[month - 1]} ${year}`;
-  }, [report, month, year]);
+    if (!rangeInvalid) {
+      return formatPeriodLabel(fromDate, toDate);
+    }
+
+    return "";
+  }, [report, fromDate, toDate, rangeInvalid]);
 
   const filenameBase = useMemo(() => {
     if (!report) return "duty-report";
@@ -266,10 +245,8 @@ export default function Reports() {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-");
 
-    return `duty-report-${safeTeam}-${year}-${String(
-      month,
-    ).padStart(2, "0")}`;
-  }, [report, year, month]);
+    return `duty-report-${safeTeam}-${report.periodStart}_to_${report.periodEnd}`;
+  }, [report]);
 
   async function handleExportExcel() {
     if (!report) return;
@@ -447,7 +424,8 @@ export default function Reports() {
           </Typography>
 
           <Typography color="text.secondary">
-            Monthly duty coverage and pay breakdown.
+            Duty coverage and pay breakdown for a chosen
+            period.
           </Typography>
         </Box>
       </Stack>
@@ -488,54 +466,39 @@ export default function Reports() {
           </TextField>
 
           <TextField
-            select
-            label="Month"
-            value={month}
-            onChange={(e) => setMonth(Number(e.target.value))}
-            sx={{ minWidth: 160 }}
-          >
-            {MONTH_NAMES.map((name, index) => (
-              <MenuItem key={name} value={index + 1}>
-                {name}
-              </MenuItem>
-            ))}
-          </TextField>
-
-          <TextField
-            type="number"
-            label="Year"
-            value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
-            sx={{ minWidth: 120 }}
-          />
-
-          <TextField
-            type="number"
-            label="Period starts on day"
-            value={periodStartDayDraft}
-            disabled={!selectedTeam || savingPeriodStartDay}
+            type="date"
+            label="From"
+            value={fromDate}
             onChange={(e) =>
-              setPeriodStartDayDraft(e.target.value)
+              setPeriod((current) => ({
+                ...current,
+                from: e.target.value,
+              }))
             }
-            onBlur={commitPeriodStartDay}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                (e.target as HTMLInputElement).blur();
-              }
-            }}
-            slotProps={{
-              htmlInput: { min: 1, max: 28 },
-            }}
-            helperText={
-              report
-                ? `Period: ${formatPeriodLabel(
-                    report.periodStart,
-                    report.periodEnd,
-                  )}`
-                : "1 = calendar month"
-            }
-            sx={{ minWidth: 180 }}
+            slotProps={{ inputLabel: { shrink: true } }}
+            sx={{ minWidth: 170 }}
           />
+
+          <TextField
+            type="date"
+            label="To"
+            value={toDate}
+            error={rangeInvalid}
+            onChange={(e) =>
+              setPeriod((current) => ({
+                ...current,
+                to: e.target.value,
+              }))
+            }
+            slotProps={{ inputLabel: { shrink: true } }}
+            sx={{ minWidth: 170 }}
+          />
+
+          {periodTitle && (
+            <Typography color="text.secondary">
+              {periodTitle}
+            </Typography>
+          )}
 
           <Box flex={1} />
 
@@ -668,7 +631,7 @@ export default function Reports() {
                           color="text.secondary"
                           py={3}
                         >
-                          No duties recorded for this month.
+                          No duties recorded for this period.
                         </Typography>
                       </TableCell>
                     </TableRow>
@@ -771,7 +734,7 @@ export default function Reports() {
                           color="text.secondary"
                           py={3}
                         >
-                          No duties recorded for this month.
+                          No duties recorded for this period.
                         </Typography>
                       </TableCell>
                     </TableRow>
@@ -839,7 +802,7 @@ export default function Reports() {
                           color="text.secondary"
                           py={3}
                         >
-                          No duties recorded for this month.
+                          No duties recorded for this period.
                         </Typography>
                       </TableCell>
                     </TableRow>
