@@ -101,6 +101,7 @@ Designed for organizations that need a simple overview of personnel, teams, duty
 - Monthly, per-team report: days covered, who had duty when, and full duty pay breakdown
 - Duty pay rates: **XXXX DKK** per weekday duty, **XXXX DKK** flat per weekend duty block (Fri–Sun covered by the same person, however many days), **XXXX DKK** for a duty on a company-wide holiday — weekend pay wins if a holiday falls on a weekend day
 - Per-employee summary (days worked, total pay) alongside the full daily duty log
+- Configurable pay-period start day per team (e.g. the 20th of one month through the 19th of the next), editable directly from the Reports page — defaults to a plain calendar month
 - Export to Excel (.xlsx, multi-sheet) and PDF
 
 ---
@@ -205,22 +206,22 @@ npm run dev
 
 ## Roadmap
 
-### Phase 1
-- Employee management
-- Team management
-- Duty rules
-- Manual scheduling
+### Phase 1 ✅
+- ✅ Employee management
+- ✅ Team management
+- ✅ Duty rules
+- ✅ Manual scheduling
 
 ### Phase 2
-- Automatic roster generation
-- Holiday handling
-- Conflict detection
+- ✅ Automatic roster generation
+- ✅ Holiday handling
+- ⏳ Conflict detection
 
 ### Phase 3
-- Reporting
-- PDF export
-- Notifications
-- Authentication
+- ✅ Reporting
+- ✅ PDF export
+- ⏳ Notifications
+- ⏳ Authentication
 
 ---
 
