@@ -28,6 +28,12 @@ model Team {
   description String?
   color       String?
 
+  // Day of the month the reporting/pay period starts on. A period runs from
+  // this day through the day before it in the following month, e.g. 20
+  // means the 20th through the 19th of next month. Default of 1 reproduces
+  // a plain calendar month.
+  payPeriodStartDay Int @default(1)
+
   employees       Employee[]
   dutyRules       DutyRule[]
   dutyAssignments DutyAssignment[]

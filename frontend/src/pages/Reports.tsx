@@ -75,6 +75,41 @@ function formatDateRange(start: string, end: string): string {
   return start === end ? start : `${start} – ${end}`;
 }
 
+function parseLocalDateKey(key: string): Date {
+  const [year, month, day] = key.split("-").map(Number);
+
+  return new Date(year, month - 1, day);
+}
+
+function formatPeriodLabel(
+  periodStart: string,
+  periodEnd: string,
+): string {
+  const start = parseLocalDateKey(periodStart);
+  const end = parseLocalDateKey(periodEnd);
+  const shortMonth = (d: Date) =>
+    MONTH_NAMES[d.getMonth()].slice(0, 3);
+
+  if (
+    start.getFullYear() === end.getFullYear() &&
+    start.getMonth() === end.getMonth()
+  ) {
+    return `${start.getDate()}–${end.getDate()} ${shortMonth(
+      end,
+    )} ${end.getFullYear()}`;
+  }
+
+  const startLabel = `${start.getDate()} ${shortMonth(start)}${
+    start.getFullYear() === end.getFullYear()
+      ? ""
+      : ` ${start.getFullYear()}`
+  }`;
+
+  return `${startLabel} – ${end.getDate()} ${shortMonth(
+    end,
+  )} ${end.getFullYear()}`;
+}
+
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -95,11 +130,23 @@ export default function Reports() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
 
+  // Draft text for the period-start-day field, kept separate from the saved
+  // value so the input isn't clobbered while the user is mid-edit.
+  const [periodStartDayDraft, setPeriodStartDayDraft] =
+    useState("1");
+  const [savingPeriodStartDay, setSavingPeriodStartDay] =
+    useState(false);
+
   const [report, setReport] = useState<MonthlyReport | null>(
     null,
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const selectedTeam = useMemo(
+    () => teams.find((team) => team.id === teamId) ?? null,
+    [teams, teamId],
+  );
 
   useEffect(() => {
     api.teams()
@@ -112,6 +159,14 @@ export default function Reports() {
       })
       .catch(() => setError("Unable to load teams."));
   }, []);
+
+  useEffect(() => {
+    if (selectedTeam) {
+      setPeriodStartDayDraft(
+        String(selectedTeam.payPeriodStartDay),
+      );
+    }
+  }, [selectedTeam]);
 
   useEffect(() => {
     if (!teamId) return;
@@ -150,12 +205,59 @@ export default function Reports() {
     return () => {
       cancelled = true;
     };
-  }, [teamId, year, month]);
+    // selectedTeam?.payPeriodStartDay isn't sent to the API directly, but the
+    // backend derives the report period from it, so a change here means the
+    // previously loaded report is for the wrong period and must be refetched.
+  }, [teamId, year, month, selectedTeam?.payPeriodStartDay]);
 
-  const monthTitle = useMemo(
-    () => `${MONTH_NAMES[month - 1]} ${year}`,
-    [month, year],
-  );
+  async function commitPeriodStartDay() {
+    if (!selectedTeam) return;
+
+    const parsed = Number(periodStartDayDraft);
+    const clamped = Number.isFinite(parsed)
+      ? Math.min(28, Math.max(1, Math.round(parsed)))
+      : selectedTeam.payPeriodStartDay;
+
+    setPeriodStartDayDraft(String(clamped));
+
+    if (clamped === selectedTeam.payPeriodStartDay) return;
+
+    try {
+      setSavingPeriodStartDay(true);
+      setError("");
+
+      const updated = await api.updateTeam(selectedTeam.id, {
+        payPeriodStartDay: clamped,
+      });
+
+      setTeams((prev) =>
+        prev.map((team) =>
+          team.id === updated.id ? updated : team,
+        ),
+      );
+    } catch (err) {
+      console.error(err);
+      setError("Unable to update the pay period start day.");
+      setPeriodStartDayDraft(
+        String(selectedTeam.payPeriodStartDay),
+      );
+    } finally {
+      setSavingPeriodStartDay(false);
+    }
+  }
+
+  // The report period no longer always matches a calendar month, so prefer
+  // the actual start/end dates once a report has loaded.
+  const periodTitle = useMemo(() => {
+    if (report) {
+      return formatPeriodLabel(
+        report.periodStart,
+        report.periodEnd,
+      );
+    }
+
+    return `${MONTH_NAMES[month - 1]} ${year}`;
+  }, [report, month, year]);
 
   const filenameBase = useMemo(() => {
     if (!report) return "duty-report";
@@ -259,14 +361,14 @@ export default function Reports() {
 
     doc.setFontSize(14);
     doc.text(
-      `Duty Report — ${report.teamName} — ${monthTitle}`,
+      `Duty Report — ${report.teamName} — ${periodTitle}`,
       14,
       15,
     );
 
     doc.setFontSize(10);
     doc.text(
-      `Days covered: ${report.totals.daysCovered} / ${report.daysInMonth}    Total pay: ${currencyFormatter.format(report.totals.totalPay)}`,
+      `Days covered: ${report.totals.daysCovered} / ${report.periodDays}    Total pay: ${currencyFormatter.format(report.totals.totalPay)}`,
       14,
       22,
     );
@@ -309,7 +411,7 @@ export default function Reports() {
     doc.addPage();
     doc.setFontSize(11);
     doc.text(
-      `Daily Duty Log — ${report.teamName} — ${monthTitle}`,
+      `Daily Duty Log — ${report.teamName} — ${periodTitle}`,
       14,
       15,
     );
@@ -407,6 +509,34 @@ export default function Reports() {
             sx={{ minWidth: 120 }}
           />
 
+          <TextField
+            type="number"
+            label="Period starts on day"
+            value={periodStartDayDraft}
+            disabled={!selectedTeam || savingPeriodStartDay}
+            onChange={(e) =>
+              setPeriodStartDayDraft(e.target.value)
+            }
+            onBlur={commitPeriodStartDay}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                (e.target as HTMLInputElement).blur();
+              }
+            }}
+            slotProps={{
+              htmlInput: { min: 1, max: 28 },
+            }}
+            helperText={
+              report
+                ? `Period: ${formatPeriodLabel(
+                    report.periodStart,
+                    report.periodEnd,
+                  )}`
+                : "1 = calendar month"
+            }
+            sx={{ minWidth: 180 }}
+          />
+
           <Box flex={1} />
 
           <Button
@@ -460,7 +590,7 @@ export default function Reports() {
                 color="primary.main"
               >
                 {report.totals.daysCovered} /{" "}
-                {report.daysInMonth}
+                {report.periodDays}
               </Typography>
             </Paper>
 

@@ -41,6 +41,7 @@ export interface Team {
   name: string;
   description: string | null;
   color: string | null;
+  payPeriodStartDay: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -49,12 +50,14 @@ export interface CreateTeamDto {
   name: string;
   description?: string;
   color?: string;
+  payPeriodStartDay?: number;
 }
 
 export interface UpdateTeamDto {
   name?: string;
   description?: string;
   color?: string;
+  payPeriodStartDay?: number;
 }
 
 export interface Employee {
@@ -229,7 +232,10 @@ export interface MonthlyReport {
   teamName: string;
   year: number;
   month: number;
-  daysInMonth: number;
+  payPeriodStartDay: number;
+  periodStart: string;
+  periodEnd: string;
+  periodDays: number;
   dailyEntries: DailyDutyEntry[];
   payLines: PayLine[];
   employeeSummaries: EmployeeSummary[];

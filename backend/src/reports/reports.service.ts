@@ -53,7 +53,10 @@ export interface MonthlyReport {
   teamName: string;
   year: number;
   month: number;
-  daysInMonth: number;
+  payPeriodStartDay: number;
+  periodStart: string;
+  periodEnd: string;
+  periodDays: number;
   dailyEntries: DailyDutyEntry[];
   payLines: PayLine[];
   employeeSummaries: EmployeeSummary[];
@@ -110,32 +113,51 @@ export class ReportsService {
       throw new NotFoundException('Team not found.');
     }
 
-    const daysInMonth = new Date(year, month, 0).getDate();
-    const monthStart = new Date(
+    // A period runs from payPeriodStartDay of the selected month through the
+    // day before it in the following month, e.g. day 20 covers the 20th
+    // through the 19th of next month. day 1 reproduces a calendar month: the
+    // "day 0 of next month" trick below already resolves to the last day of
+    // the current month in that case.
+    const startDay = team.payPeriodStartDay;
+    const periodStart = new Date(
       year,
       month - 1,
-      1,
+      startDay,
       0,
       0,
       0,
       0,
     );
-    const monthEnd = new Date(
+    const periodEnd = new Date(
       year,
-      month - 1,
-      daysInMonth,
+      month,
+      startDay - 1,
       23,
       59,
       59,
       999,
     );
+    // Counted against midnight of the end date, not periodEnd itself: using
+    // the 23:59:59.999 timestamp would add most of an extra day before the
+    // +1 below even applies, double-counting the last day.
+    const periodEndDateOnly = new Date(
+      year,
+      month,
+      startDay - 1,
+    );
+    const periodDays =
+      Math.round(
+        (periodEndDateOnly.getTime() -
+          periodStart.getTime()) /
+          (24 * 60 * 60 * 1000),
+      ) + 1;
 
     const [assignments, holidays] = await Promise.all([
       this.prisma.dutyAssignment.findMany({
         where: {
           teamId,
-          start: { lte: monthEnd },
-          end: { gte: monthStart },
+          start: { lte: periodEnd },
+          end: { gte: periodStart },
         },
         include: { employee: true },
         orderBy: { start: 'asc' },
@@ -143,8 +165,8 @@ export class ReportsService {
       this.prisma.holiday.findMany({
         where: {
           employeeId: null,
-          startDate: { lte: monthEnd },
-          endDate: { gte: monthStart },
+          startDate: { lte: periodEnd },
+          endDate: { gte: periodStart },
         },
       }),
     ]);
@@ -155,13 +177,13 @@ export class ReportsService {
       const rangeStart = new Date(
         Math.max(
           holiday.startDate.getTime(),
-          monthStart.getTime(),
+          periodStart.getTime(),
         ),
       );
       const rangeEnd = new Date(
         Math.min(
           holiday.endDate.getTime(),
-          monthEnd.getTime(),
+          periodEnd.getTime(),
         ),
       );
 
@@ -290,7 +312,10 @@ export class ReportsService {
       teamName: team.name,
       year,
       month,
-      daysInMonth,
+      payPeriodStartDay: startDay,
+      periodStart: dateKey(periodStart),
+      periodEnd: dateKey(periodEnd),
+      periodDays,
       dailyEntries,
       payLines,
       employeeSummaries,
