@@ -158,7 +158,7 @@ export default function Teams() {
         </DialogTitle>
 
         <DialogContent>
-          <Stack spacing={3} mt={1}>
+          <Stack spacing={3} sx={{ mt: 1 }}>
             {formError && (
               <Alert severity="error">{formError}</Alert>
             )}
@@ -182,7 +182,7 @@ export default function Teams() {
             <Stack
               direction="row"
               spacing={2}
-              alignItems="center"
+              sx={{ alignItems: "center" }}
             >
               <TextField
                 type="color"
@@ -275,12 +275,17 @@ export default function Teams() {
       <Box>
         <Stack
           direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-          mb={4}
+          sx={{
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 4,
+          }}
         >
           <Box>
-            <Typography variant="h4" fontWeight={700}>
+            <Typography
+              variant="h4"
+              sx={{ fontWeight: 700 }}
+            >
               Teams
             </Typography>
 
@@ -326,9 +331,11 @@ export default function Teams() {
           <CardContent>
             {loading ? (
               <Box
-                display="flex"
-                justifyContent="center"
-                py={6}
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  py: 6,
+                }}
               >
                 <CircularProgress />
               </Box>
@@ -395,7 +402,7 @@ export default function Teams() {
                       <TableCell colSpan={3} align="center">
                         <Typography
                           color="text.secondary"
-                          py={4}
+                          sx={{ py: 4 }}
                         >
                           No teams yet.
                         </Typography>

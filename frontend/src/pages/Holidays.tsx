@@ -217,7 +217,7 @@ export default function Holidays() {
         </DialogTitle>
 
         <DialogContent>
-          <Stack spacing={3} mt={1}>
+          <Stack spacing={3} sx={{ mt: 1 }}>
             {formError && (
               <Alert severity="error">{formError}</Alert>
             )}
@@ -235,7 +235,9 @@ export default function Holidays() {
                     setEndDate(e.target.value);
                   }
                 }}
-                InputLabelProps={{ shrink: true }}
+                slotProps={{
+                  inputLabel: { shrink: true },
+                }}
                 fullWidth
               />
 
@@ -245,7 +247,9 @@ export default function Holidays() {
                 value={endDate}
                 disabled={saving}
                 onChange={(e) => setEndDate(e.target.value)}
-                InputLabelProps={{ shrink: true }}
+                slotProps={{
+                  inputLabel: { shrink: true },
+                }}
                 fullWidth
               />
             </Stack>
@@ -338,12 +342,17 @@ export default function Holidays() {
       <Box>
         <Stack
           direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-          mb={4}
+          sx={{
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 4,
+          }}
         >
           <Box>
-            <Typography variant="h4" fontWeight={700}>
+            <Typography
+              variant="h4"
+              sx={{ fontWeight: 700 }}
+            >
               Holidays
             </Typography>
 
@@ -389,8 +398,7 @@ export default function Holidays() {
           <CardContent>
             <Stack
               direction="row"
-              justifyContent="flex-end"
-              mb={3}
+              sx={{ justifyContent: "flex-end", mb: 3 }}
             >
               <TextField
                 select
@@ -419,9 +427,11 @@ export default function Holidays() {
 
             {loading ? (
               <Box
-                display="flex"
-                justifyContent="center"
-                py={6}
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  py: 6,
+                }}
               >
                 <CircularProgress />
               </Box>
@@ -457,7 +467,8 @@ export default function Holidays() {
                             label={holiday.employee.name}
                             sx={(theme) => ({
                               bgcolor:
-                                holiday.employee?.team?.color ??
+                                holiday.employee?.team
+                                  ?.color ??
                                 theme.palette.primary.main,
                               color: "#FFFFFF",
                               fontWeight: 700,
@@ -501,7 +512,7 @@ export default function Holidays() {
                       <TableCell colSpan={4} align="center">
                         <Typography
                           color="text.secondary"
-                          py={4}
+                          sx={{ py: 4 }}
                         >
                           No holidays found.
                         </Typography>

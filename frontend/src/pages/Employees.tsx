@@ -229,14 +229,16 @@ export default function Employees() {
       <Box>
         <Stack
           direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-          mb={4}
+          sx={{
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 4,
+          }}
         >
           <Box>
             <Typography
               variant="h4"
-              fontWeight={700}
+              sx={{ fontWeight: 700 }}
             >
               Employees
             </Typography>
@@ -291,12 +293,11 @@ export default function Employees() {
           <CardContent>
             <Stack
               direction="row"
-              justifyContent="space-between"
-              mb={3}
+              sx={{ justifyContent: "space-between", mb: 3 }}
             >
               <Typography
                 variant="h6"
-                fontWeight={600}
+                sx={{ fontWeight: 600 }}
               >
                 Employee List
               </Typography>
@@ -314,9 +315,11 @@ export default function Employees() {
 
             {loading ? (
               <Box
-                display="flex"
-                justifyContent="center"
-                py={6}
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  py: 6,
+                }}
               >
                 <CircularProgress />
               </Box>

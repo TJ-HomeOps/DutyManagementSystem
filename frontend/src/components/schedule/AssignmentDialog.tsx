@@ -146,7 +146,7 @@ export default function AssignmentDialog({
       <DialogContent>
         <Stack
           spacing={3}
-          mt={1}
+          sx={{ mt: 1 }}
         >
           <Typography variant="body2">
             {date}
@@ -180,8 +180,8 @@ export default function AssignmentDialog({
           <TextField
             label="Team"
             value={selectedEmployee?.team.name ?? ""}
-            InputProps={{
-              readOnly: true,
+            slotProps={{
+              input: { readOnly: true },
             }}
           />
 

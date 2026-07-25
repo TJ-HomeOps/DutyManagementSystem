@@ -27,15 +27,14 @@ export default function Dashboard() {
     <Box>
       <Typography
         variant="h4"
-        fontWeight={700}
-        mb={1}
+        sx={{ fontWeight: 700, mb: 1 }}
       >
         Dashboard
       </Typography>
 
       <Typography
         color="text.secondary"
-        mb={4}
+        sx={{ mb: 4 }}
       >
         Operational overview
       </Typography>

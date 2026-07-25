@@ -185,13 +185,18 @@ export default function Roster() {
 
       <Stack
         direction={{ xs: "column", md: "row" }}
-        justifyContent="space-between"
-        alignItems={{ xs: "flex-start", md: "center" }}
         spacing={2}
-        mb={4}
+        sx={{
+          justifyContent: "space-between",
+          alignItems: { xs: "flex-start", md: "center" },
+          mb: 4,
+        }}
       >
         <Box>
-          <Typography variant="h4" fontWeight={700}>
+          <Typography
+            variant="h4"
+            sx={{ fontWeight: 700 }}
+          >
             Roster
           </Typography>
 
@@ -221,7 +226,9 @@ export default function Roster() {
         <Stack
           direction={{ xs: "column", sm: "row" }}
           spacing={2}
-          alignItems={{ xs: "stretch", sm: "center" }}
+          sx={{
+            alignItems: { xs: "stretch", sm: "center" },
+          }}
         >
           <TextField
             select
@@ -269,7 +276,7 @@ export default function Roster() {
             label="Overwrite existing"
           />
 
-          <Box flex={1} />
+          <Box sx={{ flex: 1 }} />
 
           <Button
             variant="contained"
@@ -286,7 +293,7 @@ export default function Roster() {
         </Stack>
       </Paper>
 
-      <Stack direction="row" spacing={2} mb={2}>
+      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
         <Chip
           size="small"
           label={`${summary.existing} already scheduled`}
@@ -338,7 +345,13 @@ export default function Roster() {
         }}
       >
         {loading ? (
-          <Box display="flex" justifyContent="center" py={6}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              py: 6,
+            }}
+          >
             <CircularProgress />
           </Box>
         ) : (
@@ -431,7 +444,7 @@ export default function Roster() {
                     <TableCell colSpan={5} align="center">
                       <Typography
                         color="text.secondary"
-                        py={4}
+                        sx={{ py: 4 }}
                       >
                         Select a team to preview the roster.
                       </Typography>

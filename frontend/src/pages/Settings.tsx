@@ -72,8 +72,11 @@ export default function Settings() {
 
   return (
     <Box>
-      <Stack mb={4}>
-        <Typography variant="h4" fontWeight={700}>
+      <Stack sx={{ mb: 4 }}>
+        <Typography
+          variant="h4"
+          sx={{ fontWeight: 700 }}
+        >
           Settings
         </Typography>
 
@@ -98,11 +101,14 @@ export default function Settings() {
           mb: 3,
         }}
       >
-        <Typography variant="h6" fontWeight={700} mb={0.5}>
+        <Typography
+          variant="h6"
+          sx={{ fontWeight: 700, mb: 0.5 }}
+        >
           Appearance
         </Typography>
 
-        <Typography color="text.secondary" mb={2}>
+        <Typography color="text.secondary" sx={{ mb: 2 }}>
           Switch between light and dark mode.
         </Typography>
 
@@ -117,7 +123,7 @@ export default function Settings() {
             <Stack
               direction="row"
               spacing={1}
-              alignItems="center"
+              sx={{ alignItems: "center" }}
             >
               {mode === "dark" ? (
                 <DarkModeIcon fontSize="small" />
@@ -142,11 +148,14 @@ export default function Settings() {
           p: 3,
         }}
       >
-        <Typography variant="h6" fontWeight={700} mb={0.5}>
+        <Typography
+          variant="h6"
+          sx={{ fontWeight: 700, mb: 0.5 }}
+        >
           Password Protection
         </Typography>
 
-        <Typography color="text.secondary" mb={2}>
+        <Typography color="text.secondary" sx={{ mb: 2 }}>
           When enabled, a password is required to open this
           app. There is no separate username — everyone
           uses the same password.
@@ -265,7 +274,7 @@ function SetPasswordDialog({
       <DialogTitle>Set a password</DialogTitle>
 
       <DialogContent>
-        <Stack spacing={2} mt={1}>
+        <Stack spacing={2} sx={{ mt: 1 }}>
           {error && (
             <Alert severity="error">{error}</Alert>
           )}

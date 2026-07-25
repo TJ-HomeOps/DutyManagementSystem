@@ -405,13 +405,18 @@ export default function Schedule() {
       <Box>
         <Stack
           direction={{ xs: "column", md: "row" }}
-          justifyContent="space-between"
-          alignItems={{ xs: "flex-start", md: "center" }}
           spacing={2}
-          mb={4}
+          sx={{
+            justifyContent: "space-between",
+            alignItems: { xs: "flex-start", md: "center" },
+            mb: 4,
+          }}
         >
           <Box>
-            <Typography variant="h4" fontWeight={700}>
+            <Typography
+              variant="h4"
+              sx={{ fontWeight: 700 }}
+            >
               Schedule
             </Typography>
 
@@ -420,7 +425,11 @@ export default function Schedule() {
             </Typography>
           </Box>
 
-          <Stack direction="row" spacing={2} alignItems="center">
+          <Stack
+            direction="row"
+            spacing={2}
+            sx={{ alignItems: "center" }}
+          >
             {loading && <CircularProgress size={20} />}
 
             <Button
@@ -451,9 +460,9 @@ export default function Schedule() {
         >
           <Stack
             direction="row"
-            justifyContent="space-between"
-            alignItems="center"
             sx={{
+              justifyContent: "space-between",
+              alignItems: "center",
               px: { xs: 2, md: 3 },
               py: 2,
               borderBottom: "1px solid",
@@ -473,8 +482,7 @@ export default function Schedule() {
 
             <Typography
               variant="h6"
-              fontWeight={700}
-              textAlign="center"
+              sx={{ fontWeight: 700, textAlign: "center" }}
             >
               {monthTitle}
             </Typography>
@@ -516,9 +524,9 @@ export default function Schedule() {
               >
                 <Typography
                   variant="caption"
-                  fontWeight={700}
                   color="text.secondary"
                   sx={{
+                    fontWeight: 700,
                     display: "block",
                     textAlign: "center",
                     textTransform: "uppercase",
@@ -599,9 +607,11 @@ export default function Schedule() {
                 >
                   <Stack
                     direction="row"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    mb={1}
+                    sx={{
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      mb: 1,
+                    }}
                   >
                     <Box
                       sx={{
@@ -627,7 +637,7 @@ export default function Schedule() {
                       <Typography
                         variant="caption"
                         color="text.secondary"
-                        fontWeight={600}
+                        sx={{ fontWeight: 600 }}
                       >
                         Weekend
                       </Typography>
@@ -758,8 +768,10 @@ export default function Schedule() {
         <Stack
           direction={{ xs: "column", sm: "row" }}
           spacing={2}
-          mt={2}
-          alignItems={{ xs: "flex-start", sm: "center" }}
+          sx={{
+            mt: 2,
+            alignItems: { xs: "flex-start", sm: "center" },
+          }}
         >
           <Chip
             size="small"

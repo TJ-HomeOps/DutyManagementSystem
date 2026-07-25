@@ -128,7 +128,7 @@ export default function EmployeeDialog({
       <DialogContent>
         <Stack
           spacing={3}
-          mt={1}
+          sx={{ mt: 1 }}
         >
           {error && (
             <Alert severity="error">

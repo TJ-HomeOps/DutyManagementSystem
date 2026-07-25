@@ -63,10 +63,12 @@ export default function AuthGate({
   if (state === "checking") {
     return (
       <Box
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-        minHeight="100vh"
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "100vh",
+        }}
       >
         <CircularProgress />
       </Box>
@@ -76,11 +78,13 @@ export default function AuthGate({
   if (state === "error") {
     return (
       <Box
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-        minHeight="100vh"
-        p={3}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "100vh",
+          p: 3,
+        }}
       >
         <Alert severity="error">
           Unable to reach the server. Check your connection
@@ -138,12 +142,14 @@ function PasswordPrompt({
 
   return (
     <Box
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-      minHeight="100vh"
-      bgcolor="background.default"
-      p={3}
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "100vh",
+        bgcolor: "background.default",
+        p: 3,
+      }}
     >
       <Paper
         elevation={0}
@@ -158,13 +164,16 @@ function PasswordPrompt({
           maxWidth: 360,
         }}
       >
-        <Box textAlign="center" mb={3}>
+        <Box sx={{ textAlign: "center", mb: 3 }}>
           <LockIcon
             color="primary"
             sx={{ fontSize: 40, mb: 1 }}
           />
 
-          <Typography variant="h6" fontWeight={700}>
+          <Typography
+            variant="h6"
+            sx={{ fontWeight: 700 }}
+          >
             Password required
           </Typography>
 

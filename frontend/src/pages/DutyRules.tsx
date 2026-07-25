@@ -248,7 +248,7 @@ export default function DutyRules() {
         </DialogTitle>
 
         <DialogContent>
-          <Stack spacing={3} mt={1}>
+          <Stack spacing={3} sx={{ mt: 1 }}>
             {formError && (
               <Alert severity="error">{formError}</Alert>
             )}
@@ -408,12 +408,17 @@ export default function DutyRules() {
       <Box>
         <Stack
           direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-          mb={4}
+          sx={{
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 4,
+          }}
         >
           <Box>
-            <Typography variant="h4" fontWeight={700}>
+            <Typography
+              variant="h4"
+              sx={{ fontWeight: 700 }}
+            >
               Duty Rules
             </Typography>
 
@@ -460,8 +465,7 @@ export default function DutyRules() {
           <CardContent>
             <Stack
               direction="row"
-              justifyContent="flex-end"
-              mb={3}
+              sx={{ justifyContent: "flex-end", mb: 3 }}
             >
               <TextField
                 select
@@ -485,9 +489,11 @@ export default function DutyRules() {
 
             {loading ? (
               <Box
-                display="flex"
-                justifyContent="center"
-                py={6}
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  py: 6,
+                }}
               >
                 <CircularProgress />
               </Box>
@@ -585,7 +591,7 @@ export default function DutyRules() {
                       <TableCell colSpan={6} align="center">
                         <Typography
                           color="text.secondary"
-                          py={4}
+                          sx={{ py: 4 }}
                         >
                           No duty rules found.
                         </Typography>

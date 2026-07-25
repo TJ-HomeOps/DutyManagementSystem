@@ -413,13 +413,18 @@ export default function Reports() {
     <Box>
       <Stack
         direction={{ xs: "column", md: "row" }}
-        justifyContent="space-between"
-        alignItems={{ xs: "flex-start", md: "center" }}
         spacing={2}
-        mb={4}
+        sx={{
+          justifyContent: "space-between",
+          alignItems: { xs: "flex-start", md: "center" },
+          mb: 4,
+        }}
       >
         <Box>
-          <Typography variant="h4" fontWeight={700}>
+          <Typography
+            variant="h4"
+            sx={{ fontWeight: 700 }}
+          >
             Reports
           </Typography>
 
@@ -449,7 +454,9 @@ export default function Reports() {
         <Stack
           direction={{ xs: "column", sm: "row" }}
           spacing={2}
-          alignItems={{ xs: "stretch", sm: "center" }}
+          sx={{
+            alignItems: { xs: "stretch", sm: "center" },
+          }}
         >
           <TextField
             select
@@ -500,7 +507,7 @@ export default function Reports() {
             </Typography>
           )}
 
-          <Box flex={1} />
+          <Box sx={{ flex: 1 }} />
 
           <Button
             variant="outlined"
@@ -523,7 +530,13 @@ export default function Reports() {
       </Paper>
 
       {loading ? (
-        <Box display="flex" justifyContent="center" py={6}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            py: 6,
+          }}
+        >
           <CircularProgress />
         </Box>
       ) : report ? (
@@ -531,7 +544,7 @@ export default function Reports() {
           <Stack
             direction={{ xs: "column", sm: "row" }}
             spacing={2}
-            mb={3}
+            sx={{ mb: 3 }}
           >
             <Paper
               elevation={0}
@@ -549,8 +562,8 @@ export default function Reports() {
 
               <Typography
                 variant="h4"
-                fontWeight={700}
                 color="primary.main"
+                sx={{ fontWeight: 700 }}
               >
                 {report.totals.daysCovered} /{" "}
                 {report.periodDays}
@@ -573,8 +586,8 @@ export default function Reports() {
 
               <Typography
                 variant="h4"
-                fontWeight={700}
                 color="primary.main"
+                sx={{ fontWeight: 700 }}
               >
                 {currencyFormatter.format(
                   report.totals.totalPay,
@@ -583,7 +596,10 @@ export default function Reports() {
             </Paper>
           </Stack>
 
-          <Typography variant="h6" fontWeight={700} mb={2}>
+          <Typography
+            variant="h6"
+            sx={{ fontWeight: 700, mb: 2 }}
+          >
             Employee Summary
           </Typography>
 
@@ -629,7 +645,7 @@ export default function Reports() {
                       <TableCell colSpan={3} align="center">
                         <Typography
                           color="text.secondary"
-                          py={3}
+                          sx={{ py: 3 }}
                         >
                           No duties recorded for this period.
                         </Typography>
@@ -641,7 +657,10 @@ export default function Reports() {
             </TableContainer>
           </Paper>
 
-          <Typography variant="h6" fontWeight={700} mb={2}>
+          <Typography
+            variant="h6"
+            sx={{ fontWeight: 700, mb: 2 }}
+          >
             Duty Pay
           </Typography>
 
@@ -732,7 +751,7 @@ export default function Reports() {
                       <TableCell colSpan={4} align="center">
                         <Typography
                           color="text.secondary"
-                          py={3}
+                          sx={{ py: 3 }}
                         >
                           No duties recorded for this period.
                         </Typography>
@@ -744,7 +763,10 @@ export default function Reports() {
             </TableContainer>
           </Paper>
 
-          <Typography variant="h6" fontWeight={700} mb={2}>
+          <Typography
+            variant="h6"
+            sx={{ fontWeight: 700, mb: 2 }}
+          >
             Daily Duty Log
           </Typography>
 
@@ -800,7 +822,7 @@ export default function Reports() {
                       <TableCell colSpan={4} align="center">
                         <Typography
                           color="text.secondary"
-                          py={3}
+                          sx={{ py: 3 }}
                         >
                           No duties recorded for this period.
                         </Typography>
