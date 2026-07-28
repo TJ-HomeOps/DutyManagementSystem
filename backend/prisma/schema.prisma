@@ -42,15 +42,54 @@ model Employee {
   name       String
   department String
 
+  // Matched case-insensitively against a User's Entra email on login to
+  // auto-link that login to this employee — see User below.
+  email String? @unique
+
   teamId String
   team   Team   @relation(fields: [teamId], references: [id])
 
   dutyRules       DutyRule[]
   dutyAssignments DutyAssignment[]
   holidays        Holiday[]
+  user            User?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// A real per-person identity, provisioned just-in-time on first Entra
+// login (not synced from the whole directory) and refreshed on every
+// subsequent login. Logging in with the shared local password never
+// creates or touches a User — that path stays fully anonymous/shared,
+// exactly as before.
+model User {
+  id             String @id @default(cuid())
+  entraObjectId  String @unique
+  email          String
+  name           String
+
+  employeeId String?   @unique
+  employee   Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+
+  sessions Session[]
+
+  createdAt   DateTime @default(now())
+  lastLoginAt DateTime @default(now())
+}
+
+// A real per-user session, layered alongside (not replacing) the shared
+// HMAC session the local password produces. AuthGuard accepts either.
+model Session {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([userId])
 }
 
 model DutyRule {

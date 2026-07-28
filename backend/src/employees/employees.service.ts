@@ -1,7 +1,22 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
+
+function rethrowDuplicateEmail(error: unknown): never {
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === 'P2002' &&
+    (error.meta?.target as string[] | undefined)?.includes('email')
+  ) {
+    throw new ConflictException(
+      'Another employee already uses that email address.',
+    );
+  }
+
+  throw error;
+}
 
 @Injectable()
 export class EmployeesService {
@@ -28,16 +43,20 @@ export class EmployeesService {
   }
 
   async create(dto: CreateEmployeeDto) {
-    return this.prisma.employee.create({
-      data: dto,
-    });
+    return this.prisma.employee
+      .create({
+        data: dto,
+      })
+      .catch(rethrowDuplicateEmail);
   }
 
   async update(id: string, dto: UpdateEmployeeDto) {
-    return this.prisma.employee.update({
-      where: { id },
-      data: dto,
-    });
+    return this.prisma.employee
+      .update({
+        where: { id },
+        data: dto,
+      })
+      .catch(rethrowDuplicateEmail);
   }
 
   async remove(id: string) {

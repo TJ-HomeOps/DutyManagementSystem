@@ -8,6 +8,15 @@ import type { Request } from 'express';
 
 import { readCookie } from '../common/cookie.util';
 import { AuthService, SESSION_COOKIE_NAME } from './auth.service';
+import {
+  type AuthenticatedUser,
+  USER_SESSION_COOKIE_NAME,
+  UsersService,
+} from './users.service';
+
+export interface AuthenticatedRequest extends Request {
+  user?: AuthenticatedUser;
+}
 
 // Routes reachable before a session exists: checking whether the lock is on,
 // logging in with the local password, and the Entra SSO redirect/callback
@@ -24,19 +33,38 @@ const PUBLIC_PATHS = new Set([
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<Request>();
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+
+    // Resolved unconditionally (not just when otherwise unauthenticated) so
+    // request.user is available whenever an Entra-issued session cookie is
+    // present, even while the lock is off — purely informational, never
+    // part of the access decision below.
+    const userToken = readCookie(
+      request.headers.cookie,
+      USER_SESSION_COOKIE_NAME,
+    );
+    const user = userToken
+      ? await this.usersService.getUserBySessionToken(userToken)
+      : null;
+
+    if (user) {
+      request.user = user;
+    }
 
     if (PUBLIC_PATHS.has(request.path)) {
       return true;
     }
 
-    const token = readCookie(request.headers.cookie, SESSION_COOKIE_NAME);
-    const valid = await this.authService.isSessionValid(token);
+    const sharedToken = readCookie(request.headers.cookie, SESSION_COOKIE_NAME);
+    const sharedValid = await this.authService.isSessionValid(sharedToken);
 
-    if (!valid) {
+    if (!sharedValid && !user) {
       throw new UnauthorizedException('Authentication required.');
     }
 

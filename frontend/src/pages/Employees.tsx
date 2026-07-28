@@ -77,7 +77,8 @@ export default function Employees() {
       return (
         employee.name.toLowerCase().includes(value) ||
         employee.department.toLowerCase().includes(value) ||
-        employee.team.name.toLowerCase().includes(value)
+        employee.team.name.toLowerCase().includes(value) ||
+        (employee.email?.toLowerCase().includes(value) ?? false)
       );
     });
   }, [employees, search]);
@@ -111,6 +112,18 @@ export default function Employees() {
       headerName: "Department",
       flex: 1,
       minWidth: 150,
+    },
+    {
+      field: "email",
+      headerName: "Email",
+      flex: 1,
+      minWidth: 180,
+      renderCell: (params) =>
+        params.row.email ?? (
+          <Typography component="span" color="text.secondary" variant="body2">
+            —
+          </Typography>
+        ),
     },
     {
       field: "team",

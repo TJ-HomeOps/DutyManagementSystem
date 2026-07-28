@@ -13,11 +13,17 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 
+import type { AuthenticatedRequest } from './auth.guard';
 import { readCookie } from '../common/cookie.util';
 import { AuthService, SESSION_COOKIE_NAME } from './auth.service';
-import { computeSessionToken } from './crypto.util';
 import { SetPasswordDto } from './dto/set-password.dto';
-import { buildMsalClient, ENTRA_SCOPES, isEntraUsable } from './entra.service';
+import {
+  buildMsalClient,
+  ENTRA_SCOPES,
+  extractEntraClaims,
+  isEntraUsable,
+} from './entra.service';
+import { USER_SESSION_COOKIE_NAME, UsersService } from './users.service';
 
 const SESSION_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 
@@ -28,7 +34,10 @@ const ENTRA_STATE_MAX_AGE_MS = 1000 * 60 * 5;
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+  ) {}
 
   @Get('status')
   getStatus() {
@@ -40,6 +49,26 @@ export class AuthController {
   @Get('session')
   getSession() {
     return { ok: true };
+  }
+
+  // request.user is only populated when a valid duty_user_session cookie
+  // resolved (see AuthGuard) — logging in with the shared local password
+  // never sets one, so this stays null for that path by design.
+  @Get('me')
+  getMe(@Req() request: AuthenticatedRequest) {
+    const user = request.user;
+
+    return {
+      user: user
+        ? {
+            name: user.name,
+            email: user.email,
+            employee: user.employee
+              ? { id: user.employee.id, name: user.employee.name }
+              : null,
+          }
+        : null,
+    };
   }
 
   @Post('login')
@@ -113,24 +142,33 @@ export class AuthController {
       return response.redirect('/?entraError=1');
     }
 
+    let userSession: { token: string; expiresAt: Date };
+
     try {
       const client = buildMsalClient(settings);
 
-      await client.acquireTokenByCode({
+      const result = await client.acquireTokenByCode({
         code,
         scopes: ENTRA_SCOPES,
         redirectUri: settings.entraRedirectUri!,
       });
+
+      userSession = await this.usersService.upsertFromEntra(
+        extractEntraClaims(result),
+      );
     } catch {
       return response.redirect('/?entraError=1');
     }
 
-    const token = computeSessionToken(
-      settings.serverSecret,
-      settings.passwordHash!,
-    );
-
-    this.setSessionCookie(response, token);
+    // Entra logins get their own per-user session (identifies who signed
+    // in) rather than the generic shared one /auth/login issues — either
+    // is equally sufficient to unlock the app, see AuthGuard.
+    response.cookie(USER_SESSION_COOKIE_NAME, userSession.token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      expires: userSession.expiresAt,
+      path: '/',
+    });
 
     response.redirect('/');
   }

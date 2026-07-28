@@ -80,6 +80,7 @@ export interface Employee {
   id: string;
   name: string;
   department: string;
+  email: string | null;
   teamId: string;
   createdAt: string;
   updatedAt: string;
@@ -105,12 +106,14 @@ export interface CreateEmployeeDto {
   name: string;
   department: string;
   teamId: string;
+  email?: string | null;
 }
 
 export interface UpdateEmployeeDto {
   name?: string;
   department?: string;
   teamId?: string;
+  email?: string | null;
 }
 
 export interface CreateAssignmentDto {

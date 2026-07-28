@@ -38,6 +38,7 @@ export default function EmployeeDialog({
     name: "",
     department: "",
     teamId: "",
+    email: "",
   });
 
   const [saving, setSaving] = useState(false);
@@ -57,12 +58,14 @@ export default function EmployeeDialog({
             name: employee.name,
             department: employee.department,
             teamId: employee.teamId,
+            email: employee.email ?? "",
           });
         } else {
           setForm({
             name: "",
             department: "",
             teamId: teamData[0]?.id ?? "",
+            email: "",
           });
         }
       } catch (err) {
@@ -98,17 +101,26 @@ export default function EmployeeDialog({
     try {
       setSaving(true);
 
+      const payload = {
+        ...form,
+        email: form.email?.trim() || null,
+      };
+
       if (employee) {
-        await api.updateEmployee(employee.id, form);
+        await api.updateEmployee(employee.id, payload);
       } else {
-        await api.createEmployee(form);
+        await api.createEmployee(payload);
       }
 
       onSaved();
       onClose();
     } catch (err) {
       console.error(err);
-      setError("Unable to save employee.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to save employee.",
+      );
     } finally {
       setSaving(false);
     }
@@ -172,6 +184,17 @@ export default function EmployeeDialog({
               </MenuItem>
             ))}
           </TextField>
+
+          <TextField
+            type="email"
+            label="Email"
+            value={form.email ?? ""}
+            onChange={(e) =>
+              update("email", e.target.value)
+            }
+            helperText="Work email — matches this employee to their Microsoft sign-in and is where duty notifications go."
+            fullWidth
+          />
         </Stack>
       </DialogContent>
 
