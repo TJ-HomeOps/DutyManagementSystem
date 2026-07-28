@@ -1,18 +1,17 @@
 import {
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 
+import { findOverlappingAssignment } from '../common/duty-conflicts.util';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class ScheduleService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getAssignments(
-    start: Date,
-    end: Date,
-  ) {
+  async getAssignments(start: Date, end: Date) {
     return this.prisma.dutyAssignment.findMany({
       where: {
         AND: [
@@ -54,6 +53,18 @@ export class ScheduleService {
     end: Date;
     notes?: string;
   }) {
+    const overlapping = await findOverlappingAssignment(this.prisma, {
+      employeeId: data.employeeId,
+      start: data.start,
+      end: data.end,
+    });
+
+    if (overlapping) {
+      throw new ConflictException(
+        `This employee already has a duty assignment for ${overlapping.team.name} covering this period.`,
+      );
+    }
+
     return this.prisma.dutyAssignment.create({
       data: {
         teamId: data.teamId,
@@ -83,16 +94,26 @@ export class ScheduleService {
       notes?: string;
     },
   ) {
-    const assignment =
-      await this.prisma.dutyAssignment.findUnique({
-        where: {
-          id,
-        },
-      });
+    const assignment = await this.prisma.dutyAssignment.findUnique({
+      where: {
+        id,
+      },
+    });
 
     if (!assignment) {
-      throw new NotFoundException(
-        'Duty assignment not found',
+      throw new NotFoundException('Duty assignment not found');
+    }
+
+    const overlapping = await findOverlappingAssignment(this.prisma, {
+      employeeId: data.employeeId ?? assignment.employeeId,
+      start: data.start ?? assignment.start,
+      end: data.end ?? assignment.end,
+      excludeAssignmentId: id,
+    });
+
+    if (overlapping) {
+      throw new ConflictException(
+        `This employee already has a duty assignment for ${overlapping.team.name} covering this period.`,
       );
     }
 
@@ -115,17 +136,14 @@ export class ScheduleService {
   }
 
   async deleteAssignment(id: string) {
-    const assignment =
-      await this.prisma.dutyAssignment.findUnique({
-        where: {
-          id,
-        },
-      });
+    const assignment = await this.prisma.dutyAssignment.findUnique({
+      where: {
+        id,
+      },
+    });
 
     if (!assignment) {
-      throw new NotFoundException(
-        'Duty assignment not found',
-      );
+      throw new NotFoundException('Duty assignment not found');
     }
 
     await this.prisma.dutyAssignment.delete({
@@ -140,25 +158,22 @@ export class ScheduleService {
   }
 
   async getAssignment(id: string) {
-    const assignment =
-      await this.prisma.dutyAssignment.findUnique({
-        where: {
-          id,
-        },
-        include: {
-          employee: {
-            include: {
-              team: true,
-            },
+    const assignment = await this.prisma.dutyAssignment.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        employee: {
+          include: {
+            team: true,
           },
-          team: true,
         },
-      });
+        team: true,
+      },
+    });
 
     if (!assignment) {
-      throw new NotFoundException(
-        'Duty assignment not found',
-      );
+      throw new NotFoundException('Duty assignment not found');
     }
 
     return assignment;

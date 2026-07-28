@@ -194,6 +194,11 @@ export interface UpdateHolidayDto {
   employeeId?: string | null;
 }
 
+export interface RosterConflict {
+  type: "missing_members" | "double_booking";
+  message: string;
+}
+
 export interface RosterDayPlan {
   date: string;
   weekday: string;
@@ -206,7 +211,13 @@ export interface RosterDayPlan {
   isHoliday: boolean;
   holidayName: string | null;
   holidayEmployeeName: string | null;
-  status: "existing" | "planned" | "unassigned" | "holiday";
+  conflict: RosterConflict | null;
+  status:
+    | "existing"
+    | "planned"
+    | "unassigned"
+    | "holiday"
+    | "conflict";
 }
 
 export interface RosterGenerateResult {

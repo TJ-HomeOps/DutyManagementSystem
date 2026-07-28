@@ -48,7 +48,9 @@ Designed for organizations that need a simple overview of personnel, teams, duty
 ### Roster Generation
 
 - Automatically generates duty assignments for a chosen team and month, driven by that team's duty rules (`FIXED` and `ROTATION`)
-- Preview shows each day's outcome before committing: already scheduled, will be created, unassigned (manual/no rule), or holiday
+- Preview shows each day's outcome before committing: already scheduled, will be created, unassigned (manual/no rule), holiday, or conflict
+- Conflict detection flags two cases before anything is committed: an active rotation rule with no team members to rotate through, and an employee who's already booked on another team that same day (cross-team double-booking) — generation skips conflicted days rather than compounding them
+- Manually assigning or editing duty on the Schedule page is blocked outright if it would double-book an employee against an existing assignment on any team
 - Optional overwrite of existing assignments when a rule changes
 - Idempotent — re-running never duplicates assignments
 
@@ -117,7 +119,6 @@ Designed for organizations that need a simple overview of personnel, teams, duty
 
 ## Planned Features
 
-- Duty conflict detection (e.g. double-booking, missing rotation members)
 - Employee availability
 - Email notifications
 - Audit log
@@ -229,10 +230,10 @@ Ships disabled by default — the app works purely on the local password until y
 - ✅ Duty rules
 - ✅ Manual scheduling
 
-### Phase 2
+### Phase 2 ✅
 - ✅ Automatic roster generation
 - ✅ Holiday handling
-- ⏳ Conflict detection
+- ✅ Conflict detection
 
 ### Phase 3
 - ✅ Reporting

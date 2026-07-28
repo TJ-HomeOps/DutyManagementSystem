@@ -104,8 +104,12 @@ export default function AssignmentDialog({
         employeeId,
         notes,
       });
-    } catch {
-      setError("Unable to save assignment.");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to save assignment.",
+      );
     } finally {
       setSaving(false);
     }
@@ -119,8 +123,12 @@ export default function AssignmentDialog({
       setError("");
 
       await onDelete(existing.id);
-    } catch {
-      setError("Unable to delete assignment.");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to delete assignment.",
+      );
     } finally {
       setDeleting(false);
     }

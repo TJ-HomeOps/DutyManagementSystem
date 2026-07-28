@@ -19,10 +19,12 @@ import {
   TableHead,
   TableRow,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { alpha, useTheme, type Theme } from "@mui/material/styles";
 
 import { api } from "../services/api";
@@ -79,6 +81,11 @@ function getStatusStyles(
       label: "Holiday",
       bgcolor: alpha(theme.palette.warning.main, 0.16),
       color: theme.palette.warning.dark,
+    },
+    conflict: {
+      label: "Conflict",
+      bgcolor: alpha(theme.palette.error.main, 0.16),
+      color: theme.palette.error.dark,
     },
   };
 }
@@ -168,7 +175,13 @@ export default function Roster() {
         acc[day.status] += 1;
         return acc;
       },
-      { existing: 0, planned: 0, unassigned: 0, holiday: 0 },
+      {
+        existing: 0,
+        planned: 0,
+        unassigned: 0,
+        holiday: 0,
+        conflict: 0,
+      },
     );
   }, [plan]);
 
@@ -333,6 +346,19 @@ export default function Roster() {
             fontWeight: 700,
           }}
         />
+
+        {summary.conflict > 0 && (
+          <Chip
+            size="small"
+            icon={<WarningAmberIcon sx={{ fontSize: 16 }} />}
+            label={`${summary.conflict} conflict${summary.conflict === 1 ? "" : "s"}`}
+            sx={{
+              bgcolor: statusStyles.conflict.bgcolor,
+              color: statusStyles.conflict.color,
+              fontWeight: 700,
+            }}
+          />
+        )}
       </Stack>
 
       <Paper
@@ -425,15 +451,20 @@ export default function Roster() {
                       </TableCell>
 
                       <TableCell>
-                        <Chip
-                          size="small"
-                          label={style.label}
-                          sx={{
-                            bgcolor: style.bgcolor,
-                            color: style.color,
-                            fontWeight: 600,
-                          }}
-                        />
+                        <Tooltip
+                          title={day.conflict?.message ?? ""}
+                          disableHoverListener={!day.conflict}
+                        >
+                          <Chip
+                            size="small"
+                            label={style.label}
+                            sx={{
+                              bgcolor: style.bgcolor,
+                              color: style.color,
+                              fontWeight: 600,
+                            }}
+                          />
+                        </Tooltip>
                       </TableCell>
                     </TableRow>
                   );
