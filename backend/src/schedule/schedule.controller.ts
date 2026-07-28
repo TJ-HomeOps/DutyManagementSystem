@@ -13,24 +13,22 @@ import { ScheduleService } from './schedule.service';
 
 @Controller('schedule')
 export class ScheduleController {
-  constructor(
-    private readonly scheduleService: ScheduleService,
-  ) {}
+  constructor(private readonly scheduleService: ScheduleService) {}
 
   @Get()
   async getAssignments(
     @Query('start') start: string,
     @Query('end') end: string,
+    @Query('teamId') teamId?: string,
   ) {
     if (!start || !end) {
-      throw new Error(
-        'Both start and end query parameters are required.',
-      );
+      throw new Error('Both start and end query parameters are required.');
     }
 
     return this.scheduleService.getAssignments(
       new Date(start),
       new Date(end),
+      teamId,
     );
   }
 
@@ -38,19 +36,13 @@ export class ScheduleController {
   async getMonth(
     @Query('year') year: string,
     @Query('month') month: string,
+    @Query('teamId') teamId?: string,
   ) {
     const y = Number(year);
     const m = Number(month);
 
-    if (
-      Number.isNaN(y) ||
-      Number.isNaN(m) ||
-      m < 1 ||
-      m > 12
-    ) {
-      throw new Error(
-        'Invalid year or month supplied.',
-      );
+    if (Number.isNaN(y) || Number.isNaN(m) || m < 1 || m > 12) {
+      throw new Error('Invalid year or month supplied.');
     }
 
     const start = new Date(y, m - 1, 1);
@@ -58,10 +50,7 @@ export class ScheduleController {
 
     end.setHours(23, 59, 59, 999);
 
-    return this.scheduleService.getAssignments(
-      start,
-      end,
-    );
+    return this.scheduleService.getAssignments(start, end, teamId);
   }
 
   @Post()
@@ -96,28 +85,17 @@ export class ScheduleController {
       notes?: string;
     },
   ) {
-    return this.scheduleService.updateAssignment(
-      id,
-      {
-        teamId: body.teamId,
-        employeeId: body.employeeId,
-        start: body.start
-          ? new Date(body.start)
-          : undefined,
-        end: body.end
-          ? new Date(body.end)
-          : undefined,
-        notes: body.notes,
-      },
-    );
+    return this.scheduleService.updateAssignment(id, {
+      teamId: body.teamId,
+      employeeId: body.employeeId,
+      start: body.start ? new Date(body.start) : undefined,
+      end: body.end ? new Date(body.end) : undefined,
+      notes: body.notes,
+    });
   }
 
   @Delete(':id')
-  async deleteAssignment(
-    @Param('id') id: string,
-  ) {
-    return this.scheduleService.deleteAssignment(
-      id,
-    );
+  async deleteAssignment(@Param('id') id: string) {
+    return this.scheduleService.deleteAssignment(id);
   }
 }

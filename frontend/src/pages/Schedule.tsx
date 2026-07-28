@@ -6,9 +6,11 @@ import {
   Button,
   Chip,
   CircularProgress,
+  MenuItem,
   Paper,
   Snackbar,
   Stack,
+  TextField,
   Typography,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
@@ -22,7 +24,7 @@ import AssignmentDialog, {
 } from "../components/schedule/AssignmentDialog";
 
 import { api } from "../services/api";
-import type { DutyAssignment, Employee } from "../services/api";
+import type { DutyAssignment, Team } from "../services/api";
 
 const WEEKDAY_NAMES = [
   "Monday",
@@ -229,7 +231,8 @@ export default function Schedule() {
   const [visibleMonth, setVisibleMonth] = useState(
     startOfMonth(new Date()),
   );
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [teamId, setTeamId] = useState("");
   const [assignments, setAssignments] = useState<
     Record<string, DutyAssignment>
   >({});
@@ -240,12 +243,20 @@ export default function Schedule() {
   const [selectedDate, setSelectedDate] = useState("");
 
   useEffect(() => {
-    api.employees()
-      .then(setEmployees)
+    api.teams()
+      .then((data) => {
+        setTeams(data);
+
+        if (data.length > 0) {
+          setTeamId((current) => current || data[0].id);
+        }
+      })
       .catch(console.error);
   }, []);
 
   async function loadAssignments() {
+    if (!teamId) return;
+
     try {
       setLoading(true);
       setError("");
@@ -253,6 +264,7 @@ export default function Schedule() {
       const data = await api.getScheduleMonth(
         visibleMonth.getFullYear(),
         visibleMonth.getMonth() + 1,
+        teamId,
       );
 
       const byDay: Record<string, DutyAssignment> = {};
@@ -273,7 +285,7 @@ export default function Schedule() {
   useEffect(() => {
     loadAssignments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visibleMonth]);
+  }, [visibleMonth, teamId]);
 
   const calendarDays = useMemo(() => {
     const firstDay = startOfMonth(visibleMonth);
@@ -316,27 +328,19 @@ export default function Schedule() {
   }
 
   async function saveAssignment(data: Assignment) {
-    const employee = employees.find(
-      (item) => item.id === data.employeeId,
-    );
-
-    if (!employee) {
-      throw new Error("Employee not found.");
-    }
-
     const existing = assignments[selectedDate];
     const { start, end } = dayBounds(selectedDate);
 
     if (existing) {
       await api.updateAssignment(existing.id, {
         employeeId: data.employeeId,
-        teamId: employee.teamId,
+        teamId,
         notes: data.notes,
       });
     } else {
       await api.createAssignment({
         employeeId: data.employeeId,
-        teamId: employee.teamId,
+        teamId,
         start: start.toISOString(),
         end: end.toISOString(),
         notes: data.notes,
@@ -381,6 +385,7 @@ export default function Schedule() {
       <AssignmentDialog
         open={dialogOpen}
         date={selectedDate}
+        teamId={teamId}
         existing={
           selectedAssignment
             ? {
@@ -431,6 +436,21 @@ export default function Schedule() {
             sx={{ alignItems: "center" }}
           >
             {loading && <CircularProgress size={20} />}
+
+            <TextField
+              select
+              label="Team"
+              value={teamId}
+              onChange={(e) => setTeamId(e.target.value)}
+              sx={{ minWidth: 180 }}
+              size="small"
+            >
+              {teams.map((team) => (
+                <MenuItem key={team.id} value={team.id}>
+                  {team.name}
+                </MenuItem>
+              ))}
+            </TextField>
 
             <Button
               variant="outlined"

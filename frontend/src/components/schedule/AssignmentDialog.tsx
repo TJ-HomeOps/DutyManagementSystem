@@ -32,6 +32,7 @@ export interface ExistingAssignment {
 interface AssignmentDialogProps {
   open: boolean;
   date: string;
+  teamId: string;
   existing?: ExistingAssignment | null;
   onClose: () => void;
   onSave: (assignment: Assignment) => Promise<void> | void;
@@ -41,6 +42,7 @@ interface AssignmentDialogProps {
 export default function AssignmentDialog({
   open,
   date,
+  teamId,
   existing,
   onClose,
   onSave,
@@ -70,14 +72,19 @@ export default function AssignmentDialog({
         setLoading(true);
 
         const data = await api.employees();
+        const teamEmployees = data.filter(
+          (employee) => employee.teamId === teamId,
+        );
 
-        setEmployees(data);
+        setEmployees(teamEmployees);
 
         if (existing) {
           setEmployeeId(existing.employeeId);
           setNotes(existing.notes);
         } else {
-          setEmployeeId(data.length > 0 ? data[0].id : "");
+          setEmployeeId(
+            teamEmployees.length > 0 ? teamEmployees[0].id : "",
+          );
           setNotes("");
         }
       } catch {
@@ -88,7 +95,7 @@ export default function AssignmentDialog({
     }
 
     loadEmployees();
-  }, [open, existing]);
+  }, [open, existing, teamId]);
 
   async function handleSave() {
     if (!employeeId) {

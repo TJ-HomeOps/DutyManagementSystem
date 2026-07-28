@@ -428,19 +428,25 @@ export const api = {
   getSchedule: (
     start: string,
     end: string,
+    teamId?: string,
   ) =>
     request<DutyAssignment[]>(
       `/schedule?start=${encodeURIComponent(
         start,
-      )}&end=${encodeURIComponent(end)}`,
+      )}&end=${encodeURIComponent(end)}${
+        teamId ? `&teamId=${encodeURIComponent(teamId)}` : ""
+      }`,
     ),
 
   getScheduleMonth: (
     year: number,
     month: number,
+    teamId?: string,
   ) =>
     request<DutyAssignment[]>(
-      `/schedule/month?year=${year}&month=${month}`,
+      `/schedule/month?year=${year}&month=${month}${
+        teamId ? `&teamId=${encodeURIComponent(teamId)}` : ""
+      }`,
     ),
 
   createAssignment: (

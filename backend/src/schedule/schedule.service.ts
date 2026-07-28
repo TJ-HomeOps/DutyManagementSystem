@@ -15,7 +15,7 @@ export class ScheduleService {
     private readonly graphCalendarService: GraphCalendarService,
   ) {}
 
-  async getAssignments(start: Date, end: Date) {
+  async getAssignments(start: Date, end: Date, teamId?: string) {
     return this.prisma.dutyAssignment.findMany({
       where: {
         AND: [
@@ -29,6 +29,7 @@ export class ScheduleService {
               gte: start,
             },
           },
+          ...(teamId ? [{ teamId }] : []),
         ],
       },
       include: {
