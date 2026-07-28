@@ -54,7 +54,7 @@ Designed for organizations that need a simple overview of personnel, teams, duty
 - Optional overwrite of existing assignments when a rule changes
 - Idempotent — re-running never duplicates assignments
 
-  ![Roster](docs/images/Roster.png)
+![Roster](docs/images/Roster.png)
 
 ---
 
