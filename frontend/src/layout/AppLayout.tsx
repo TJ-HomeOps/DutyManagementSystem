@@ -246,10 +246,8 @@ export default function AppLayout({ children }: Props) {
         component="main"
         sx={{
           flex: 1,
-          ml: `${drawerWidth}px`,
           mt: `${appBarHeight}px`,
           minWidth: 0,
-          width: `calc(100vw - ${drawerWidth}px)`,
           p: 4,
           overflow: "auto",
         }}
