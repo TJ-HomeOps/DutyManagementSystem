@@ -1,7 +1,11 @@
+import { Currency } from '@prisma/client';
 import {
+  IsEnum,
   IsHexColor,
+  IsInt,
   IsOptional,
   IsString,
+  Min,
   MaxLength,
 } from 'class-validator';
 
@@ -18,4 +22,23 @@ export class CreateTeamDto {
   @IsOptional()
   @IsHexColor()
   color?: string;
+
+  @IsOptional()
+  @IsEnum(Currency)
+  currency?: Currency;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  weekdayRate?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  weekendRate?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  holidayRate?: number;
 }

@@ -22,11 +22,24 @@ enum DutyRuleType {
   ROTATION
 }
 
+enum Currency {
+  DKK
+  EUR
+}
+
 model Team {
   id          String  @id @default(cuid())
   name        String  @unique
   description String?
   color       String?
+
+  // Rates only make sense alongside a specific currency, so both live on
+  // Team rather than as global constants — defaults match what every team
+  // used before this was configurable, so existing reports don't change.
+  currency    Currency @default(DKK)
+  weekdayRate Int      @default(1250)
+  weekendRate Int      @default(6000)
+  holidayRate Int      @default(2250)
 
   employees       Employee[]
   dutyRules       DutyRule[]

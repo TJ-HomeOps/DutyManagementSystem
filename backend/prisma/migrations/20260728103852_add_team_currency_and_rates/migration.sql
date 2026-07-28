@@ -1,0 +1,9 @@
+-- CreateEnum
+CREATE TYPE "Currency" AS ENUM ('DKK', 'EUR');
+
+-- AlterTable
+ALTER TABLE "Team" ADD COLUMN     "currency" "Currency" NOT NULL DEFAULT 'DKK',
+ADD COLUMN     "holidayRate" INTEGER NOT NULL DEFAULT 2250,
+ADD COLUMN     "weekdayRate" INTEGER NOT NULL DEFAULT 1250,
+ADD COLUMN     "weekendRate" INTEGER NOT NULL DEFAULT 6000;
+

@@ -29,6 +29,7 @@ import ExcelJS from "exceljs";
 
 import { api } from "../services/api";
 import type {
+  Currency,
   DutyReport,
   PayLineType,
   Team,
@@ -65,11 +66,18 @@ const PAY_TYPE_LABELS: Record<PayLineType, string> = {
   HOLIDAY: "Holiday",
 };
 
-const currencyFormatter = new Intl.NumberFormat("da-DK", {
-  style: "currency",
-  currency: "DKK",
-  maximumFractionDigits: 0,
-});
+const CURRENCY_LOCALES: Record<Currency, string> = {
+  DKK: "da-DK",
+  EUR: "de-DE",
+};
+
+function getCurrencyFormatter(currency: Currency): Intl.NumberFormat {
+  return new Intl.NumberFormat(CURRENCY_LOCALES[currency], {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  });
+}
 
 function formatDateRange(start: string, end: string): string {
   return start === end ? start : `${start} – ${end}`;
@@ -163,6 +171,11 @@ export default function Reports() {
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const currencyFormatter = useMemo(
+    () => getCurrencyFormatter((report?.currency ?? "DKK") as Currency),
+    [report?.currency],
+  );
 
   const rangeInvalid = toDate < fromDate;
 
@@ -258,7 +271,7 @@ export default function Reports() {
     summarySheet.columns = [
       { header: "Employee", key: "employee", width: 24 },
       { header: "Days Worked", key: "days", width: 14 },
-      { header: "Total Pay (DKK)", key: "pay", width: 16 },
+      { header: `Total Pay (${report.currency})`, key: "pay", width: 16 },
     ];
 
     for (const s of report.employeeSummaries) {
@@ -286,7 +299,7 @@ export default function Reports() {
       { header: "Employee", key: "employee", width: 24 },
       { header: "Start Date", key: "start", width: 14 },
       { header: "End Date", key: "end", width: 14 },
-      { header: "Amount (DKK)", key: "amount", width: 14 },
+      { header: `Amount (${report.currency})`, key: "amount", width: 14 },
     ];
 
     for (const line of report.payLines) {

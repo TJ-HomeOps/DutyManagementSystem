@@ -14,6 +14,7 @@ import {
   DialogContentText,
   DialogTitle,
   IconButton,
+  MenuItem,
   Snackbar,
   Stack,
   Table,
@@ -31,9 +32,15 @@ import EditIcon from "@mui/icons-material/Edit";
 import RefreshIcon from "@mui/icons-material/Refresh";
 
 import { api } from "../services/api";
-import type { Team } from "../services/api";
+import type { Currency, Team } from "../services/api";
 
 const DEFAULT_COLOR = "#0A4D8C";
+const DEFAULT_RATES = {
+  currency: "DKK" as Currency,
+  weekdayRate: 1250,
+  weekendRate: 6000,
+  holidayRate: 2250,
+};
 
 export default function Teams() {
   const [teams, setTeams] = useState<Team[]>([]);
@@ -46,6 +53,18 @@ export default function Teams() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [color, setColor] = useState(DEFAULT_COLOR);
+  const [currency, setCurrency] = useState<Currency>(
+    DEFAULT_RATES.currency,
+  );
+  const [weekdayRate, setWeekdayRate] = useState(
+    String(DEFAULT_RATES.weekdayRate),
+  );
+  const [weekendRate, setWeekendRate] = useState(
+    String(DEFAULT_RATES.weekendRate),
+  );
+  const [holidayRate, setHolidayRate] = useState(
+    String(DEFAULT_RATES.holidayRate),
+  );
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
 
@@ -77,6 +96,10 @@ export default function Teams() {
     setName("");
     setDescription("");
     setColor(DEFAULT_COLOR);
+    setCurrency(DEFAULT_RATES.currency);
+    setWeekdayRate(String(DEFAULT_RATES.weekdayRate));
+    setWeekendRate(String(DEFAULT_RATES.weekendRate));
+    setHolidayRate(String(DEFAULT_RATES.holidayRate));
     setFormError("");
     setDialogOpen(true);
   }
@@ -86,6 +109,10 @@ export default function Teams() {
     setName(team.name);
     setDescription(team.description ?? "");
     setColor(team.color ?? DEFAULT_COLOR);
+    setCurrency(team.currency);
+    setWeekdayRate(String(team.weekdayRate));
+    setWeekendRate(String(team.weekendRate));
+    setHolidayRate(String(team.holidayRate));
     setFormError("");
     setDialogOpen(true);
   }
@@ -104,6 +131,10 @@ export default function Teams() {
         name,
         description: description || undefined,
         color: color || undefined,
+        currency,
+        weekdayRate: Number(weekdayRate),
+        weekendRate: Number(weekendRate),
+        holidayRate: Number(holidayRate),
       };
 
       if (editing) {
@@ -200,6 +231,57 @@ export default function Teams() {
                   color: "#FFFFFF",
                   fontWeight: 700,
                 }}
+              />
+            </Stack>
+
+            <TextField
+              select
+              label="Currency"
+              value={currency}
+              disabled={saving}
+              onChange={(e) =>
+                setCurrency(e.target.value as Currency)
+              }
+            >
+              <MenuItem value="DKK">DKK</MenuItem>
+              <MenuItem value="EUR">EUR</MenuItem>
+            </TextField>
+
+            <Stack
+              direction="row"
+              spacing={2}
+            >
+              <TextField
+                type="number"
+                label="Weekday rate"
+                value={weekdayRate}
+                disabled={saving}
+                onChange={(e) =>
+                  setWeekdayRate(e.target.value)
+                }
+                fullWidth
+              />
+
+              <TextField
+                type="number"
+                label="Weekend rate"
+                value={weekendRate}
+                disabled={saving}
+                onChange={(e) =>
+                  setWeekendRate(e.target.value)
+                }
+                fullWidth
+              />
+
+              <TextField
+                type="number"
+                label="Holiday rate"
+                value={holidayRate}
+                disabled={saving}
+                onChange={(e) =>
+                  setHolidayRate(e.target.value)
+                }
+                fullWidth
               />
             </Stack>
           </Stack>
@@ -345,6 +427,7 @@ export default function Teams() {
                   <TableRow>
                     <TableCell>Team</TableCell>
                     <TableCell>Description</TableCell>
+                    <TableCell>Currency</TableCell>
                     <TableCell align="right">
                       Actions
                     </TableCell>
@@ -379,6 +462,8 @@ export default function Teams() {
                         )}
                       </TableCell>
 
+                      <TableCell>{team.currency}</TableCell>
+
                       <TableCell align="right">
                         <IconButton
                           color="primary"
@@ -399,7 +484,7 @@ export default function Teams() {
 
                   {teams.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={3} align="center">
+                      <TableCell colSpan={4} align="center">
                         <Typography
                           color="text.secondary"
                           sx={{ py: 4 }}

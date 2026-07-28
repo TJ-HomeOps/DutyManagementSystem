@@ -55,11 +55,17 @@ export interface DashboardResponse {
   upcoming: any[];
 }
 
+export type Currency = "DKK" | "EUR";
+
 export interface Team {
   id: string;
   name: string;
   description: string | null;
   color: string | null;
+  currency: Currency;
+  weekdayRate: number;
+  weekendRate: number;
+  holidayRate: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -68,12 +74,20 @@ export interface CreateTeamDto {
   name: string;
   description?: string;
   color?: string;
+  currency?: Currency;
+  weekdayRate?: number;
+  weekendRate?: number;
+  holidayRate?: number;
 }
 
 export interface UpdateTeamDto {
   name?: string;
   description?: string;
   color?: string;
+  currency?: Currency;
+  weekdayRate?: number;
+  weekendRate?: number;
+  holidayRate?: number;
 }
 
 export interface Employee {
@@ -260,6 +274,7 @@ export interface EmployeeSummary {
 export interface DutyReport {
   teamId: string;
   teamName: string;
+  currency: Currency;
   periodStart: string;
   periodEnd: string;
   periodDays: number;

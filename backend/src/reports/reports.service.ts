@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service';
-import { Weekday } from '@prisma/client';
+import { Currency, Weekday } from '@prisma/client';
 
 const WEEKDAY_BY_JS_DAY: Weekday[] = [
   Weekday.SUNDAY,
@@ -16,10 +16,6 @@ const WEEKDAY_BY_JS_DAY: Weekday[] = [
   Weekday.FRIDAY,
   Weekday.SATURDAY,
 ];
-
-export const WEEKDAY_RATE = 1250;
-export const WEEKEND_RATE = 6000;
-export const HOLIDAY_RATE = 2250;
 
 export type PayLineType = 'WEEKDAY' | 'WEEKEND' | 'HOLIDAY';
 
@@ -52,6 +48,7 @@ export interface EmployeeSummary {
 export interface DutyReport {
   teamId: string;
   teamName: string;
+  currency: Currency;
   periodStart: string;
   periodEnd: string;
   periodDays: number;
@@ -71,12 +68,10 @@ function isWeekendDay(jsDay: number): boolean {
 }
 
 function dateKey(date: Date): string {
-  return `${date.getFullYear()}-${String(
-    date.getMonth() + 1,
-  ).padStart(2, '0')}-${String(date.getDate()).padStart(
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
     2,
     '0',
-  )}`;
+  )}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
 function parseDateKey(key: string): Date {
@@ -97,10 +92,7 @@ function endOfDayFromKey(key: string): Date {
   return new Date(year, month - 1, day, 23, 59, 59, 999);
 }
 
-function isNextCalendarDay(
-  fromKey: string,
-  toKey: string,
-): boolean {
+function isNextCalendarDay(fromKey: string, toKey: string): boolean {
   const from = parseDateKey(fromKey);
   const to = parseDateKey(toKey);
   const msPerDay = 24 * 60 * 60 * 1000;
@@ -127,9 +119,7 @@ export class ReportsService {
     }
 
     if (endDateKey < startDateKey) {
-      throw new BadRequestException(
-        'end must not be before start.',
-      );
+      throw new BadRequestException('end must not be before start.');
     }
 
     const team = await this.prisma.team.findUnique({
@@ -147,8 +137,7 @@ export class ReportsService {
     // before the +1 below even applies, double-counting the last day.
     const periodDays =
       Math.round(
-        (startOfDayFromKey(endDateKey).getTime() -
-          periodStart.getTime()) /
+        (startOfDayFromKey(endDateKey).getTime() - periodStart.getTime()) /
           (24 * 60 * 60 * 1000),
       ) + 1;
 
@@ -175,16 +164,10 @@ export class ReportsService {
 
     for (const holiday of holidays) {
       const rangeStart = new Date(
-        Math.max(
-          holiday.startDate.getTime(),
-          periodStart.getTime(),
-        ),
+        Math.max(holiday.startDate.getTime(), periodStart.getTime()),
       );
       const rangeEnd = new Date(
-        Math.min(
-          holiday.endDate.getTime(),
-          periodEnd.getTime(),
-        ),
+        Math.min(holiday.endDate.getTime(), periodEnd.getTime()),
       );
 
       const cursor = new Date(rangeStart);
@@ -195,22 +178,20 @@ export class ReportsService {
       }
     }
 
-    const dailyEntries: DailyDutyEntry[] = assignments.map(
-      (assignment) => {
-        const key = dateKey(assignment.start);
-        const jsDay = assignment.start.getDay();
+    const dailyEntries: DailyDutyEntry[] = assignments.map((assignment) => {
+      const key = dateKey(assignment.start);
+      const jsDay = assignment.start.getDay();
 
-        return {
-          date: key,
-          weekday: WEEKDAY_BY_JS_DAY[jsDay],
-          employeeId: assignment.employeeId,
-          employeeName: assignment.employee.name,
-          isWeekend: isWeekendDay(jsDay),
-          isHoliday: holidaysByDate.has(key),
-          holidayName: holidaysByDate.get(key) ?? null,
-        };
-      },
-    );
+      return {
+        date: key,
+        weekday: WEEKDAY_BY_JS_DAY[jsDay],
+        employeeId: assignment.employeeId,
+        employeeName: assignment.employee.name,
+        isWeekend: isWeekendDay(jsDay),
+        isHoliday: holidaysByDate.has(key),
+        holidayName: holidaysByDate.get(key) ?? null,
+      };
+    });
 
     const byEmployee = new Map<string, DailyDutyEntry[]>();
 
@@ -224,9 +205,7 @@ export class ReportsService {
     const payLines: PayLine[] = [];
 
     for (const entries of byEmployee.values()) {
-      const sorted = [...entries].sort((a, b) =>
-        a.date.localeCompare(b.date),
-      );
+      const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
 
       let i = 0;
 
@@ -239,10 +218,7 @@ export class ReportsService {
           while (
             j + 1 < sorted.length &&
             sorted[j + 1].isWeekend &&
-            isNextCalendarDay(
-              sorted[j].date,
-              sorted[j + 1].date,
-            )
+            isNextCalendarDay(sorted[j].date, sorted[j + 1].date)
           ) {
             j++;
           }
@@ -253,7 +229,7 @@ export class ReportsService {
             employeeName: entry.employeeName,
             startDate: sorted[i].date,
             endDate: sorted[j].date,
-            amount: WEEKEND_RATE,
+            amount: team.weekendRate,
           });
 
           i = j + 1;
@@ -264,9 +240,7 @@ export class ReportsService {
             employeeName: entry.employeeName,
             startDate: entry.date,
             endDate: entry.date,
-            amount: entry.isHoliday
-              ? HOLIDAY_RATE
-              : WEEKDAY_RATE,
+            amount: entry.isHoliday ? team.holidayRate : team.weekdayRate,
           });
 
           i++;
@@ -298,18 +272,16 @@ export class ReportsService {
       }
     }
 
-    const employeeSummaries = [...summaryMap.values()].sort(
-      (a, b) => a.employeeName.localeCompare(b.employeeName),
+    const employeeSummaries = [...summaryMap.values()].sort((a, b) =>
+      a.employeeName.localeCompare(b.employeeName),
     );
 
-    const totalPay = payLines.reduce(
-      (sum, line) => sum + line.amount,
-      0,
-    );
+    const totalPay = payLines.reduce((sum, line) => sum + line.amount, 0);
 
     return {
       teamId,
       teamName: team.name,
+      currency: team.currency,
       periodStart: startDateKey,
       periodEnd: endDateKey,
       periodDays,
