@@ -106,6 +106,8 @@ Designed for organizations that need a simple overview of personnel, teams, duty
 - Configurable pay-period start day per team (e.g. the 20th of one month through the 19th of the next), editable directly from the Reports page — defaults to a plain calendar month
 - Export to Excel (.xlsx, multi-sheet) and PDF, with pay columns and totals in the team's own currency
 
+![Reports](docs/images/reports.png)
+
 ---
 
 ### Access Control & Settings
@@ -115,6 +117,8 @@ Designed for organizations that need a simple overview of personnel, teams, duty
 - **Microsoft Entra ID (Azure AD) single sign-on** — ships built in but inactive; an admin registers an app in the Entra admin center and fills in the Tenant ID, Client ID, Client secret and Redirect URI from Settings to turn it on. Once enabled, "Sign in with Microsoft" appears alongside the local password on the login screen — the local password always keeps working as a fallback
 - Each Entra sign-in provisions (and keeps refreshed) a lightweight per-user account, auto-linked to an Employee record by matching email — no directory sync needed, no separate "create a user" step
 - Client secret is encrypted at rest
+
+![Settings](docs/images/settings.png)
 
 ---
 
