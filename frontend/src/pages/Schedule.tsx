@@ -36,29 +36,6 @@ const WEEKDAY_NAMES = [
   "Sunday",
 ];
 
-const FIXED_DUTIES: Record<number, string | undefined> = {
-  1: "RL",
-  2: "RT",
-  3: "JKS",
-};
-
-/*
-  Weekend rotation.
-
-  Each entry applies to one Friday-to-Monday weekend.
-  TJ and MT are deliberately represented by null, so those weekends remain blank.
-  Change the order or anchor date once the historical weekend roster is confirmed.
-*/
-const WEEKEND_ROTATION: Array<string | null> = [
-  "RT",
-  "JKS",
-  "RL",
-  null,
-  null,
-];
-
-const WEEKEND_ROTATION_ANCHOR = new Date(2026, 0, 2);
-
 interface BirthdayEvent {
   day: number;
   month: number;
@@ -183,48 +160,6 @@ function isWithinRange(
   const current = dateKey(date);
 
   return current >= start && current <= end;
-}
-
-function getWeekdayDuty(date: Date): string | undefined {
-  return FIXED_DUTIES[date.getDay()];
-}
-
-function getFridayForWeekend(date: Date): Date | null {
-  const day = date.getDay();
-
-  if (day === 5) {
-    return date;
-  }
-
-  if (day === 6) {
-    return addDays(date, -1);
-  }
-
-  if (day === 0) {
-    return addDays(date, -2);
-  }
-
-  return null;
-}
-
-function getWeekendDuty(date: Date): string | null | undefined {
-  const friday = getFridayForWeekend(date);
-
-  if (!friday) {
-    return undefined;
-  }
-
-  const millisecondsPerWeek = 7 * 24 * 60 * 60 * 1000;
-  const difference =
-    friday.getTime() - WEEKEND_ROTATION_ANCHOR.getTime();
-
-  const weekIndex = Math.floor(difference / millisecondsPerWeek);
-  const rotationIndex =
-    ((weekIndex % WEEKEND_ROTATION.length) +
-      WEEKEND_ROTATION.length) %
-    WEEKEND_ROTATION.length;
-
-  return WEEKEND_ROTATION[rotationIndex];
 }
 
 export default function Schedule() {
@@ -575,16 +510,11 @@ export default function Schedule() {
                 new Date(),
               );
               const manualAssignment = assignments[key];
-              const fixedDuty = getWeekdayDuty(date);
-              const weekendDuty = getWeekendDuty(date);
               const birthday = getBirthday(date);
               const multiDayEvents = getMultiDayEvents(date);
 
               const displayedDuty =
-                manualAssignment?.employee.name ??
-                fixedDuty ??
-                weekendDuty ??
-                null;
+                manualAssignment?.employee.name ?? null;
 
               const isWeekend =
                 date.getDay() === 5 ||
@@ -652,44 +582,21 @@ export default function Schedule() {
                     >
                       {date.getDate()}
                     </Box>
-
-                    {date.getDay() === 5 && (
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ fontWeight: 600 }}
-                      >
-                        Weekend
-                      </Typography>
-                    )}
                   </Stack>
 
                   <Stack spacing={0.75}>
-                    {displayedDuty && (
+                    {displayedDuty && manualAssignment && (
                       <Chip
                         size="small"
-                        label={
-                          manualAssignment
-                            ? `Duty: ${displayedDuty}`
-                            : date.getDay() === 5
-                              ? `Weekend: ${displayedDuty}`
-                              : `Duty: ${displayedDuty}`
-                        }
+                        label={`Duty: ${displayedDuty}`}
                         sx={(theme) => ({
                           alignSelf: "stretch",
                           height: "auto",
                           justifyContent: "flex-start",
-                          bgcolor: manualAssignment
-                            ? (manualAssignment.employee.team
-                                .color ??
-                              theme.palette.primary.main)
-                            : alpha(
-                                theme.palette.primary.main,
-                                0.12,
-                              ),
-                          color: manualAssignment
-                            ? "#FFFFFF"
-                            : theme.palette.primary.main,
+                          bgcolor:
+                            manualAssignment.employee.team.color ??
+                            theme.palette.primary.main,
+                          color: "#FFFFFF",
                           fontWeight: 700,
                           "& .MuiChip-label": {
                             display: "block",
@@ -701,37 +608,15 @@ export default function Schedule() {
                       />
                     )}
 
-                    {!displayedDuty &&
-                      isCurrentMonth &&
-                      date.getDay() <= 4 && (
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ pt: 0.5 }}
-                        >
-                          Click to assign
-                        </Typography>
-                      )}
-
-                    {date.getDay() === 6 &&
-                      weekendDuty && (
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                        >
-                          Weekend duty continues
-                        </Typography>
-                      )}
-
-                    {date.getDay() === 0 &&
-                      weekendDuty && (
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                        >
-                          Weekend duty ends 08:00
-                        </Typography>
-                      )}
+                    {!displayedDuty && isCurrentMonth && (
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ pt: 0.5 }}
+                      >
+                        Click to assign
+                      </Typography>
+                    )}
 
                     {manualAssignment?.notes && (
                       <Typography
@@ -784,40 +669,6 @@ export default function Schedule() {
             })}
           </Box>
         </Paper>
-
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={2}
-          sx={{
-            mt: 2,
-            alignItems: { xs: "flex-start", sm: "center" },
-          }}
-        >
-          <Chip
-            size="small"
-            label="Fixed weekday duty"
-            sx={(theme) => ({
-              bgcolor: alpha(theme.palette.primary.main, 0.12),
-              color: theme.palette.primary.main,
-              fontWeight: 700,
-            })}
-          />
-
-          <Chip
-            size="small"
-            label="Weekend duty"
-            sx={{
-              bgcolor: "action.selected",
-              color: "text.primary",
-              fontWeight: 700,
-            }}
-          />
-
-          <Typography variant="caption" color="text.secondary">
-            Empty weekend slots represent former TJ and MT
-            rotations.
-          </Typography>
-        </Stack>
       </Box>
     </>
   );
