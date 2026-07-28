@@ -101,10 +101,10 @@ Designed for organizations that need a simple overview of personnel, teams, duty
 ### Reports
 
 - Monthly, per-team report: days covered, who had duty when, and full duty pay breakdown
-- Duty pay rates: **XXXX DKK** per weekday duty, **XXXX DKK** flat per weekend duty block (Fri–Sun covered by the same person, however many days), **XXXX DKK** for a duty on a company-wide holiday — weekend pay wins if a holiday falls on a weekend day
+- Pay rates (weekday / weekend / holiday) and currency (DKK or EUR) are configured per team on the Teams page — a weekend duty block (Fri–Sun covered by the same person, however many days) is paid as one flat amount; a duty on a company-wide holiday pays the holiday rate, with weekend pay winning if a holiday falls on a weekend day
 - Per-employee summary (days worked, total pay) alongside the full daily duty log
 - Configurable pay-period start day per team (e.g. the 20th of one month through the 19th of the next), editable directly from the Reports page — defaults to a plain calendar month
-- Export to Excel (.xlsx, multi-sheet) and PDF
+- Export to Excel (.xlsx, multi-sheet) and PDF, with pay columns and totals in the team's own currency
 
 ---
 
@@ -113,14 +113,32 @@ Designed for organizations that need a simple overview of personnel, teams, duty
 - App-wide password lock — a single shared password required to open the app, toggled from Settings
 - Settings itself sits behind a second, separate admin password, so unlocking the app doesn't grant access to Settings
 - **Microsoft Entra ID (Azure AD) single sign-on** — ships built in but inactive; an admin registers an app in the Entra admin center and fills in the Tenant ID, Client ID, Client secret and Redirect URI from Settings to turn it on. Once enabled, "Sign in with Microsoft" appears alongside the local password on the login screen — the local password always keeps working as a fallback
+- Each Entra sign-in provisions (and keeps refreshed) a lightweight per-user account, auto-linked to an Employee record by matching email — no directory sync needed, no separate "create a user" step
 - Client secret is encrypted at rest
+
+---
+
+### Notifications
+
+- Ships off by default; an admin fills in SMTP details from Settings (host, port, credentials, from-address, an admin alert address) to turn it on
+- Once enabled: a daily morning email reminds each employee (via the email on their Employee record) that they're on duty that day
+- Roster generation emails the configured admin address a summary whenever it finds a conflict, so they don't have to notice it in the UI
+- A misconfigured or unreachable mail server never blocks scheduling or roster generation — sends fail quietly and get logged
+
+---
+
+### Microsoft Teams / Outlook Calendar Sync
+
+- Each team can point at its own shared mailbox or Microsoft 365 Group calendar (e.g. one for Sjælland, one for Jylland), set from the Teams page
+- Reuses the same Entra app registration as SSO login (needs the `Calendars.ReadWrite` Graph application permission additionally consented in Azure)
+- Creating, editing or deleting a duty assignment — manually or via Roster generation — pushes, updates, or removes the matching all-day event on that team's calendar
+- Sync failures (Graph outage, missing permission, unconfigured calendar) are logged and never block the underlying scheduling action
 
 ---
 
 ## Planned Features
 
 - Employee availability
-- Email notifications
 - Audit log
 - Role based permissions
 
@@ -204,6 +222,14 @@ Ships disabled by default — the app works purely on the local password until y
 3. Create a client secret under Certificates & secrets.
 4. In the app, open **Settings** (its own admin password, separate from the app lock), enable Password Protection if it isn't already, then fill in the Tenant ID, Application (client) ID, client secret and the same Redirect URI under **Microsoft Entra ID**, and switch it on.
 
+### Email Notifications (optional)
+
+Ships off by default. In **Settings**, fill in your SMTP host, port, credentials, from-address, and an admin alert address under **Notifications**, then switch it on.
+
+### Microsoft Teams / Outlook Calendar Sync (optional)
+
+Reuses the Entra app registration above — you'll need to additionally grant it the `Calendars.ReadWrite` Graph **application** permission (with admin consent) in the Entra admin center. Then, per team on the **Teams** page, set "Microsoft calendar" to the UPN of a shared mailbox or Microsoft 365 Group calendar (e.g. `duty-sjaelland@yourdomain`) — duty assignments for that team start syncing to it automatically.
+
 ---
 
 ## Current Progress
@@ -235,11 +261,15 @@ Ships disabled by default — the app works purely on the local password until y
 - ✅ Holiday handling
 - ✅ Conflict detection
 
-### Phase 3
+### Phase 3 ✅
 - ✅ Reporting
 - ✅ PDF export
-- ⏳ Notifications
-- ✅ Authentication (local password lock + Microsoft Entra ID SSO)
+- ✅ Notifications
+- ✅ Authentication (local password lock + Microsoft Entra ID SSO, with per-user accounts synced from Entra logins)
+
+### Phase 4 ✅
+- ✅ EUR currency support (per-team, alongside DKK)
+- ✅ Microsoft Teams / Outlook calendar sync (per-team shared calendars)
 
 ---
 
