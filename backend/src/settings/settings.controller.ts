@@ -14,6 +14,7 @@ import { SESSION_COOKIE_NAME } from '../auth/auth.service';
 import { SetPasswordDto } from '../auth/dto/set-password.dto';
 import { readCookie } from '../common/cookie.util';
 import { UpdateEntraConfigDto } from './dto/update-entra-config.dto';
+import { UpdateNotificationsConfigDto } from './dto/update-notifications-config.dto';
 import {
   SETTINGS_SESSION_COOKIE_NAME,
   SettingsService,
@@ -110,6 +111,16 @@ export class SettingsController {
   @Put('entra')
   updateEntraConfig(@Body() dto: UpdateEntraConfigDto) {
     return this.settingsService.updateEntraConfig(dto);
+  }
+
+  @Get('notifications')
+  getNotificationsConfig() {
+    return this.settingsService.getNotificationsConfig();
+  }
+
+  @Put('notifications')
+  updateNotificationsConfig(@Body() dto: UpdateNotificationsConfigDto) {
+    return this.settingsService.updateNotificationsConfig(dto);
   }
 
   private setSettingsCookie(response: Response, token: string): void {

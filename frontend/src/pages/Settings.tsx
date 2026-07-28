@@ -18,7 +18,11 @@ import {
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
 
-import { api, type EntraConfig } from "../services/api";
+import {
+  api,
+  type EntraConfig,
+  type NotificationsConfig,
+} from "../services/api";
 import { useColorMode } from "../theme/ColorModeProvider";
 import SettingsGate from "../auth/SettingsGate";
 
@@ -188,6 +192,8 @@ function SettingsContent() {
       </Paper>
 
       <EntraSection lockEnabled={lockEnabled} />
+
+      <NotificationsSection />
 
       <Paper
         elevation={0}
@@ -609,6 +615,183 @@ function EntraSection({ lockEnabled }: { lockEnabled: boolean }) {
             value={redirectUri}
             onChange={(e) => setRedirectUri(e.target.value)}
             helperText="Register this exact URI as a Web redirect URI on the Entra app registration."
+            fullWidth
+            size="small"
+          />
+
+          <Box>
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={saving}
+            >
+              Save
+            </Button>
+          </Box>
+        </Stack>
+      )}
+    </Paper>
+  );
+}
+
+function NotificationsSection() {
+  const [config, setConfig] = useState<NotificationsConfig | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const [enabled, setEnabled] = useState(false);
+  const [smtpHost, setSmtpHost] = useState("");
+  const [smtpPort, setSmtpPort] = useState("");
+  const [smtpUser, setSmtpUser] = useState("");
+  const [smtpPassword, setSmtpPassword] = useState("");
+  const [smtpFrom, setSmtpFrom] = useState("");
+  const [adminNotificationEmail, setAdminNotificationEmail] = useState("");
+
+  useEffect(() => {
+    api.getNotificationsConfig()
+      .then((data) => {
+        setConfig(data);
+        setEnabled(data.enabled);
+        setSmtpHost(data.smtpHost ?? "");
+        setSmtpPort(data.smtpPort ? String(data.smtpPort) : "");
+        setSmtpUser(data.smtpUser ?? "");
+        setSmtpFrom(data.smtpFrom ?? "");
+        setAdminNotificationEmail(data.adminNotificationEmail ?? "");
+      })
+      .catch(() => setError("Unable to load notification settings."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function handleSave() {
+    try {
+      setSaving(true);
+      setError("");
+      setSaved(false);
+
+      const updated = await api.updateNotificationsConfig({
+        enabled,
+        smtpHost,
+        smtpPort: smtpPort ? Number(smtpPort) : undefined,
+        smtpUser,
+        smtpFrom,
+        adminNotificationEmail,
+        ...(smtpPassword ? { smtpPassword } : {}),
+      });
+
+      setConfig(updated);
+      setSmtpPassword("");
+      setSaved(true);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to save notification settings.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        border: "1px solid",
+        borderColor: "divider",
+        borderRadius: 3,
+        p: 3,
+        mb: 3,
+      }}
+    >
+      <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
+        Notifications
+      </Typography>
+
+      <Typography color="text.secondary" sx={{ mb: 2 }}>
+        Emails employees a reminder on the morning of their duty, and
+        alerts an admin address whenever roster generation finds a
+        conflict. Ships off until an SMTP server is configured below.
+      </Typography>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      {saved && !error && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          Saved.
+        </Alert>
+      )}
+
+      {!loading && config && (
+        <Stack spacing={2}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={enabled}
+                onChange={(_e, checked) => setEnabled(checked)}
+              />
+            }
+            label={enabled ? "Enabled" : "Disabled"}
+          />
+
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+            <TextField
+              label="SMTP host"
+              value={smtpHost}
+              onChange={(e) => setSmtpHost(e.target.value)}
+              fullWidth
+              size="small"
+            />
+
+            <TextField
+              label="SMTP port"
+              value={smtpPort}
+              onChange={(e) => setSmtpPort(e.target.value)}
+              sx={{ minWidth: 140 }}
+              size="small"
+            />
+          </Stack>
+
+          <TextField
+            label="SMTP username"
+            value={smtpUser}
+            onChange={(e) => setSmtpUser(e.target.value)}
+            fullWidth
+            size="small"
+          />
+
+          <TextField
+            type="password"
+            label="SMTP password"
+            value={smtpPassword}
+            onChange={(e) => setSmtpPassword(e.target.value)}
+            placeholder={
+              config.hasSmtpPassword ? "•••••••• (unchanged)" : ""
+            }
+            helperText="Leave blank to keep the currently saved password."
+            fullWidth
+            size="small"
+          />
+
+          <TextField
+            label="From address"
+            value={smtpFrom}
+            onChange={(e) => setSmtpFrom(e.target.value)}
+            helperText='e.g. "Duty Roster <duty@yourcompany.com>"'
+            fullWidth
+            size="small"
+          />
+
+          <TextField
+            label="Admin alert email"
+            value={adminNotificationEmail}
+            onChange={(e) => setAdminNotificationEmail(e.target.value)}
+            helperText="Where roster-conflict alerts are sent."
             fullWidth
             size="small"
           />

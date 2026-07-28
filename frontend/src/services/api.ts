@@ -299,6 +299,26 @@ export interface UpdateEntraConfigDto {
   redirectUri?: string;
 }
 
+export interface NotificationsConfig {
+  enabled: boolean;
+  smtpHost: string | null;
+  smtpPort: number | null;
+  smtpUser: string | null;
+  smtpFrom: string | null;
+  adminNotificationEmail: string | null;
+  hasSmtpPassword: boolean;
+}
+
+export interface UpdateNotificationsConfigDto {
+  enabled: boolean;
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpUser?: string;
+  smtpPassword?: string;
+  smtpFrom?: string;
+  adminNotificationEmail?: string;
+}
+
 // Full page navigation, not a fetch() call — the browser needs to follow
 // the 302 chain out to Microsoft and back.
 export const entraLoginUrl = `${API_BASE}/auth/entra/login`;
@@ -547,6 +567,15 @@ export const api = {
 
   updateEntraConfig: (dto: UpdateEntraConfigDto) =>
     request<EntraConfig>("/settings/entra", {
+      method: "PUT",
+      body: JSON.stringify(dto),
+    }),
+
+  getNotificationsConfig: () =>
+    request<NotificationsConfig>("/settings/notifications"),
+
+  updateNotificationsConfig: (dto: UpdateNotificationsConfigDto) =>
+    request<NotificationsConfig>("/settings/notifications", {
       method: "PUT",
       body: JSON.stringify(dto),
     }),

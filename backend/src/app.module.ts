@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+// Aliased: collides with our own duty-scheduling ./schedule/schedule.module.
+import { ScheduleModule as CronScheduleModule } from '@nestjs/schedule';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -16,12 +18,14 @@ import { RosterModule } from './roster/roster.module';
 import { DutyRulesModule } from './duty-rules/duty-rules.module';
 import { DutyAssignmentsModule } from './duty-assignments/duty-assignments.module';
 import { ReportsModule } from './reports/reports.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    CronScheduleModule.forRoot(),
     PrismaModule,
     AuthModule,
     SettingsModule,
@@ -34,6 +38,7 @@ import { ReportsModule } from './reports/reports.module';
     DutyRulesModule,
     DutyAssignmentsModule,
     ReportsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -24,6 +24,16 @@ export interface EntraConfigView {
   hasClientSecret: boolean;
 }
 
+export interface NotificationsConfigView {
+  enabled: boolean;
+  smtpHost: string | null;
+  smtpPort: number | null;
+  smtpUser: string | null;
+  smtpFrom: string | null;
+  adminNotificationEmail: string | null;
+  hasSmtpPassword: boolean;
+}
+
 @Injectable()
 export class SettingsService {
   constructor(
@@ -173,6 +183,72 @@ export class SettingsService {
       clientId: updated.entraClientId,
       redirectUri: updated.entraRedirectUri,
       hasClientSecret: Boolean(updated.entraClientSecretEnc),
+    };
+  }
+
+  async getNotificationsConfig(): Promise<NotificationsConfigView> {
+    const settings = await this.authService.getSettings();
+
+    return {
+      enabled: settings.notificationsEnabled,
+      smtpHost: settings.smtpHost,
+      smtpPort: settings.smtpPort,
+      smtpUser: settings.smtpUser,
+      smtpFrom: settings.smtpFrom,
+      adminNotificationEmail: settings.adminNotificationEmail,
+      hasSmtpPassword: Boolean(settings.smtpPasswordEnc),
+    };
+  }
+
+  async updateNotificationsConfig(dto: {
+    enabled: boolean;
+    smtpHost?: string;
+    smtpPort?: number;
+    smtpUser?: string;
+    smtpPassword?: string;
+    smtpFrom?: string;
+    adminNotificationEmail?: string;
+  }): Promise<NotificationsConfigView> {
+    const settings = await this.authService.getSettings();
+
+    const smtpHost = dto.smtpHost?.trim() || settings.smtpHost;
+    const smtpPort = dto.smtpPort ?? settings.smtpPort;
+    const smtpUser = dto.smtpUser?.trim() || settings.smtpUser;
+    const smtpFrom = dto.smtpFrom?.trim() || settings.smtpFrom;
+    const adminNotificationEmail =
+      dto.adminNotificationEmail?.trim() || settings.adminNotificationEmail;
+
+    const smtpPasswordEnc = dto.smtpPassword?.trim()
+      ? encryptSecret(dto.smtpPassword.trim(), settings.serverSecret)
+      : settings.smtpPasswordEnc;
+
+    if (dto.enabled && (!smtpHost || !smtpPort || !smtpFrom)) {
+      throw new BadRequestException(
+        'SMTP host, port, and from-address are all required to enable notifications.',
+      );
+    }
+
+    const updated = await this.prisma.appSettings.update({
+      where: { id: 1 },
+      data: {
+        notificationsEnabled: dto.enabled,
+        smtpHost,
+        smtpPort,
+        smtpUser,
+        smtpPasswordEnc,
+        smtpFrom,
+        adminNotificationEmail,
+      },
+    });
+
+    return {
+      enabled: updated.notificationsEnabled,
+      smtpHost: updated.smtpHost,
+      smtpPort: updated.smtpPort,
+      smtpUser: updated.smtpUser,
+      smtpFrom: updated.smtpFrom,
+      adminNotificationEmail: updated.adminNotificationEmail,
+      hasSmtpPassword: Boolean(updated.smtpPasswordEnc),
     };
   }
 }

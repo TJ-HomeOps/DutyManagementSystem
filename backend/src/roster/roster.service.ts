@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
+import { MailService } from '../notifications/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { DutyRuleType, Weekday } from '@prisma/client';
 
@@ -50,7 +51,10 @@ function dateKey(year: number, month: number, day: number) {
 
 @Injectable()
 export class RosterService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mailService: MailService,
+  ) {}
 
   async computeMonthPlan(
     teamId: string,
@@ -330,6 +334,24 @@ export class RosterService {
       });
 
       created.push(day);
+    }
+
+    const conflicts = skipped.filter((day) => day.conflict);
+
+    if (conflicts.length > 0) {
+      const team = await this.prisma.team.findUnique({
+        where: { id: teamId },
+      });
+
+      // Fire-and-forget: MailService never throws (it catches internally),
+      // so this can't delay or fail the roster-generation response.
+      void this.mailService.sendRosterConflictAlert({
+        teamName: team?.name ?? teamId,
+        conflicts: conflicts.map((day) => ({
+          date: day.date,
+          message: day.conflict!.message,
+        })),
+      });
     }
 
     return {

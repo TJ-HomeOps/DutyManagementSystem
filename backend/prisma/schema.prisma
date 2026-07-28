@@ -157,6 +157,17 @@ model AppSettings {
   entraClientSecretEnc String?
   entraRedirectUri     String?
 
+  // Email notifications — same "ships inert until configured" pattern as
+  // Entra above. adminNotificationEmail is where roster-conflict alerts go;
+  // duty reminders go to each Employee's own email instead.
+  notificationsEnabled   Boolean @default(false)
+  smtpHost               String?
+  smtpPort               Int?
+  smtpUser               String?
+  smtpPasswordEnc        String?
+  smtpFrom               String?
+  adminNotificationEmail String?
+
   // Generated once and never exposed. Session tokens are
   // hmac(serverSecret, passwordHash), so rotating the password
   // automatically invalidates every previously issued session.
