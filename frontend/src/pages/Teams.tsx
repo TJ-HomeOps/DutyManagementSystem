@@ -65,6 +65,7 @@ export default function Teams() {
   const [holidayRate, setHolidayRate] = useState(
     String(DEFAULT_RATES.holidayRate),
   );
+  const [msCalendarUserId, setMsCalendarUserId] = useState("");
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
 
@@ -100,6 +101,7 @@ export default function Teams() {
     setWeekdayRate(String(DEFAULT_RATES.weekdayRate));
     setWeekendRate(String(DEFAULT_RATES.weekendRate));
     setHolidayRate(String(DEFAULT_RATES.holidayRate));
+    setMsCalendarUserId("");
     setFormError("");
     setDialogOpen(true);
   }
@@ -113,6 +115,7 @@ export default function Teams() {
     setWeekdayRate(String(team.weekdayRate));
     setWeekendRate(String(team.weekendRate));
     setHolidayRate(String(team.holidayRate));
+    setMsCalendarUserId(team.msCalendarUserId ?? "");
     setFormError("");
     setDialogOpen(true);
   }
@@ -135,6 +138,7 @@ export default function Teams() {
         weekdayRate: Number(weekdayRate),
         weekendRate: Number(weekendRate),
         holidayRate: Number(holidayRate),
+        msCalendarUserId: msCalendarUserId || undefined,
       };
 
       if (editing) {
@@ -284,6 +288,15 @@ export default function Teams() {
                 fullWidth
               />
             </Stack>
+
+            <TextField
+              label="Microsoft calendar"
+              value={msCalendarUserId}
+              disabled={saving}
+              onChange={(e) => setMsCalendarUserId(e.target.value)}
+              helperText="UPN of the shared mailbox or Microsoft 365 Group this team's duty gets synced to (e.g. duty-sjaelland@yourdomain). Leave blank to skip calendar sync."
+              fullWidth
+            />
           </Stack>
         </DialogContent>
 

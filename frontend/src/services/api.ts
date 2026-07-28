@@ -66,6 +66,7 @@ export interface Team {
   weekdayRate: number;
   weekendRate: number;
   holidayRate: number;
+  msCalendarUserId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -78,6 +79,7 @@ export interface CreateTeamDto {
   weekdayRate?: number;
   weekendRate?: number;
   holidayRate?: number;
+  msCalendarUserId?: string;
 }
 
 export interface UpdateTeamDto {
@@ -88,6 +90,7 @@ export interface UpdateTeamDto {
   weekdayRate?: number;
   weekendRate?: number;
   holidayRate?: number;
+  msCalendarUserId?: string;
 }
 
 export interface Employee {

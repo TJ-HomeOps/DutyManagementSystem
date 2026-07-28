@@ -41,4 +41,10 @@ export class CreateTeamDto {
   @IsInt()
   @Min(0)
   holidayRate?: number;
+
+  // UPN of the shared mailbox/M365 Group calendar this team's duty
+  // assignments get pushed to.
+  @IsOptional()
+  @IsString()
+  msCalendarUserId?: string;
 }

@@ -5,11 +5,15 @@ import {
 } from '@nestjs/common';
 
 import { findOverlappingAssignment } from '../common/duty-conflicts.util';
+import { GraphCalendarService } from '../graph/graph-calendar.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class ScheduleService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly graphCalendarService: GraphCalendarService,
+  ) {}
 
   async getAssignments(start: Date, end: Date) {
     return this.prisma.dutyAssignment.findMany({
@@ -65,7 +69,7 @@ export class ScheduleService {
       );
     }
 
-    return this.prisma.dutyAssignment.create({
+    const created = await this.prisma.dutyAssignment.create({
       data: {
         teamId: data.teamId,
         employeeId: data.employeeId,
@@ -82,6 +86,13 @@ export class ScheduleService {
         team: true,
       },
     });
+
+    // Fire-and-forget: GraphCalendarService never throws (it catches
+    // internally), so an unconfigured or unreachable calendar can't fail
+    // the assignment itself.
+    void this.graphCalendarService.syncCreated(created.id);
+
+    return created;
   }
 
   async updateAssignment(
@@ -117,7 +128,7 @@ export class ScheduleService {
       );
     }
 
-    return this.prisma.dutyAssignment.update({
+    const updated = await this.prisma.dutyAssignment.update({
       where: {
         id,
       },
@@ -133,6 +144,10 @@ export class ScheduleService {
         team: true,
       },
     });
+
+    void this.graphCalendarService.syncUpdated(updated.id);
+
+    return updated;
   }
 
   async deleteAssignment(id: string) {
@@ -151,6 +166,12 @@ export class ScheduleService {
         id,
       },
     });
+
+    void this.graphCalendarService.syncDeleted(
+      id,
+      assignment.teamId,
+      assignment.msGraphEventId,
+    );
 
     return {
       success: true,

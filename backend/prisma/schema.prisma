@@ -41,6 +41,11 @@ model Team {
   weekendRate Int      @default(6000)
   holidayRate Int      @default(2250)
 
+  // UPN of the shared mailbox or M365 Group whose calendar this team's duty
+  // assignments get pushed to (e.g. duty-sjaelland@yourdomain) — inert until
+  // set, same "ships off until configured" posture as Entra/notifications.
+  msCalendarUserId String?
+
   employees       Employee[]
   dutyRules       DutyRule[]
   dutyAssignments DutyAssignment[]
@@ -202,6 +207,11 @@ model DutyAssignment {
   end   DateTime
 
   notes String?
+
+  // Tracks the pushed Microsoft Graph calendar event so a later
+  // update/delete of this assignment can update/delete that same event
+  // instead of leaving orphaned or duplicate entries on the team calendar.
+  msGraphEventId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

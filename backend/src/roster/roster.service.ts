@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
+import { GraphCalendarService } from '../graph/graph-calendar.service';
 import { MailService } from '../notifications/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { DutyRuleType, Weekday } from '@prisma/client';
@@ -54,6 +55,7 @@ export class RosterService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly mailService: MailService,
+    private readonly graphCalendarService: GraphCalendarService,
   ) {}
 
   async computeMonthPlan(
@@ -316,6 +318,8 @@ export class RosterService {
           data: { employeeId: day.ruleEmployeeId },
         });
 
+        void this.graphCalendarService.syncUpdated(day.existingAssignmentId);
+
         updated.push(day);
         continue;
       }
@@ -323,7 +327,7 @@ export class RosterService {
       const [yearStr, monthStr, dayStr] = day.date.split('-').map(Number);
       const { start, end } = dayBounds(yearStr, monthStr, dayStr);
 
-      await this.prisma.dutyAssignment.create({
+      const createdAssignment = await this.prisma.dutyAssignment.create({
         data: {
           teamId,
           employeeId: day.ruleEmployeeId,
@@ -332,6 +336,8 @@ export class RosterService {
           notes: `Auto-generated (${day.ruleType})`,
         },
       });
+
+      void this.graphCalendarService.syncCreated(createdAssignment.id);
 
       created.push(day);
     }
