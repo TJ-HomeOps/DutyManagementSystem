@@ -118,7 +118,7 @@ export default function AppLayout({ children }: Props) {
     <Box
       sx={{
         display: "flex",
-        minHeight: "100vh",
+        height: "100vh",
         bgcolor: "background.default",
       }}
     >
