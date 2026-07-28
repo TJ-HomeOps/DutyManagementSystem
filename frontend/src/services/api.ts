@@ -51,11 +51,10 @@ export interface DashboardTeamDuty {
   employeeName: string | null;
 }
 
-export interface DashboardTeamBreakdown {
-  teamId: string;
-  teamName: string;
-  teamColor: string | null;
-  employeeCount: number;
+export interface DashboardHoliday {
+  id: string;
+  name: string;
+  employeeName: string | null;
 }
 
 export interface DashboardUpcomingAssignment {
@@ -76,7 +75,7 @@ export interface DashboardResponse {
     assignments: number;
   };
   todayDutyByTeam: DashboardTeamDuty[];
-  teamBreakdown: DashboardTeamBreakdown[];
+  holidaysToday: DashboardHoliday[];
   upcoming: DashboardUpcomingAssignment[];
 }
 

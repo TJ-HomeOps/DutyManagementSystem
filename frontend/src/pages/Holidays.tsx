@@ -7,7 +7,6 @@ import {
   Card,
   CardContent,
   Chip,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -31,6 +30,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import RefreshIcon from "@mui/icons-material/Refresh";
 
+import EmptyState from "../components/EmptyState";
+import TableSkeleton from "../components/TableSkeleton";
 import { api } from "../services/api";
 import type { Employee, Holiday } from "../services/api";
 
@@ -426,15 +427,7 @@ export default function Holidays() {
             </Stack>
 
             {loading ? (
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  py: 6,
-                }}
-              >
-                <CircularProgress />
-              </Box>
+              <TableSkeleton />
             ) : (
               <Table>
                 <TableHead>
@@ -510,12 +503,7 @@ export default function Holidays() {
                   {sortedHolidays.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={4} align="center">
-                        <Typography
-                          color="text.secondary"
-                          sx={{ py: 4 }}
-                        >
-                          No holidays found.
-                        </Typography>
+                        <EmptyState message="No holidays found." />
                       </TableCell>
                     </TableRow>
                   )}

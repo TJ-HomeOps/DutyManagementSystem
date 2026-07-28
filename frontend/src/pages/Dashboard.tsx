@@ -15,16 +15,7 @@ import BadgeIcon from "@mui/icons-material/Badge";
 import GroupsIcon from "@mui/icons-material/Groups";
 import RuleIcon from "@mui/icons-material/Rule";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
-
-import {
-  Bar,
-  BarChart,
-  Cell,
-  LabelList,
-  Tooltip as RechartsTooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import BeachAccessIcon from "@mui/icons-material/BeachAccess";
 
 import { api } from "../services/api";
 import type {
@@ -232,70 +223,55 @@ export default function Dashboard() {
             }}
           >
             <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
-              Employees per team
+              Employees on holiday
             </Typography>
 
             {loading ? (
-              <Skeleton variant="rectangular" height={160} sx={{ borderRadius: 2 }} />
-            ) : dashboard.teamBreakdown.length === 0 ? (
-              <EmptyState message="No teams yet." />
+              <Stack spacing={1.5}>
+                {[0, 1].map((i) => (
+                  <Skeleton key={i} height={40} />
+                ))}
+              </Stack>
+            ) : dashboard.holidaysToday.length === 0 ? (
+              <EmptyState
+                icon={<BeachAccessIcon />}
+                message="No one is on holiday today."
+              />
             ) : (
-              <BarChart
-                width={420}
-                height={Math.max(120, dashboard.teamBreakdown.length * 48)}
-                data={dashboard.teamBreakdown}
-                layout="vertical"
-                margin={{ top: 0, right: 32, bottom: 0, left: 0 }}
-              >
-                <XAxis type="number" hide />
+              <Stack spacing={1.5}>
+                {dashboard.holidaysToday.map((holiday) => (
+                  <Stack
+                    key={holiday.id}
+                    direction="row"
+                    spacing={1.5}
+                    sx={{
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      py: 1,
+                      px: 1.5,
+                      borderRadius: 2,
+                      bgcolor: "action.hover",
+                    }}
+                  >
+                    <Typography sx={{ fontWeight: 700 }}>
+                      {holiday.employeeName ?? "Whole company"}
+                    </Typography>
 
-                <YAxis
-                  type="category"
-                  dataKey="teamName"
-                  width={100}
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{
-                    fill: theme.palette.text.secondary,
-                    fontSize: 13,
-                  }}
-                />
-
-                <RechartsTooltip
-                  cursor={{ fill: theme.palette.action.hover }}
-                  contentStyle={{
-                    background: theme.palette.background.paper,
-                    border: `1px solid ${theme.palette.divider}`,
-                    borderRadius: 8,
-                    color: theme.palette.text.primary,
-                  }}
-                  labelStyle={{ color: theme.palette.text.primary }}
-                  formatter={(value) => [
-                    `${value} employee${value === 1 ? "" : "s"}`,
-                    "",
-                  ]}
-                />
-
-                <Bar
-                  dataKey="employeeCount"
-                  barSize={22}
-                  radius={[0, 4, 4, 0]}
-                >
-                  {dashboard.teamBreakdown.map((team) => (
-                    <Cell
-                      key={team.teamId}
-                      fill={team.teamColor ?? DEFAULT_TEAM_COLOR}
+                    <Chip
+                      size="small"
+                      icon={<BeachAccessIcon />}
+                      label={holiday.name}
+                      sx={{
+                        bgcolor: alpha(theme.palette.warning.main, 0.16),
+                        color: theme.palette.warning.dark,
+                        "& .MuiChip-icon": {
+                          color: theme.palette.warning.dark,
+                        },
+                      }}
                     />
-                  ))}
-
-                  <LabelList
-                    dataKey="employeeCount"
-                    position="right"
-                    fill={theme.palette.text.secondary}
-                    fontSize={13}
-                  />
-                </Bar>
-              </BarChart>
+                  </Stack>
+                ))}
+              </Stack>
             )}
           </Paper>
         </Grid>

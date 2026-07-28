@@ -7,7 +7,6 @@ import {
   Card,
   CardContent,
   Chip,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -34,6 +33,8 @@ import EditIcon from "@mui/icons-material/Edit";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import { alpha } from "@mui/material/styles";
 
+import EmptyState from "../components/EmptyState";
+import TableSkeleton from "../components/TableSkeleton";
 import { api } from "../services/api";
 import type {
   DutyRule,
@@ -488,15 +489,7 @@ export default function DutyRules() {
             </Stack>
 
             {loading ? (
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  py: 6,
-                }}
-              >
-                <CircularProgress />
-              </Box>
+              <TableSkeleton />
             ) : (
               <Table>
                 <TableHead>
@@ -589,12 +582,7 @@ export default function DutyRules() {
                   {filteredRules.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={6} align="center">
-                        <Typography
-                          color="text.secondary"
-                          sx={{ py: 4 }}
-                        >
-                          No duty rules found.
-                        </Typography>
+                        <EmptyState message="No duty rules found." />
                       </TableCell>
                     </TableRow>
                   )}

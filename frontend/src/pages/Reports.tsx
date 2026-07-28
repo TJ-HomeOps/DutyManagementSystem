@@ -5,7 +5,6 @@ import {
   Box,
   Button,
   Chip,
-  CircularProgress,
   MenuItem,
   Paper,
   Stack,
@@ -27,6 +26,8 @@ import { jsPDF } from "jspdf";
 import { autoTable } from "jspdf-autotable";
 import ExcelJS from "exceljs";
 
+import EmptyState from "../components/EmptyState";
+import TableSkeleton from "../components/TableSkeleton";
 import { api } from "../services/api";
 import type {
   Currency,
@@ -543,15 +544,17 @@ export default function Reports() {
       </Paper>
 
       {loading ? (
-        <Box
+        <Paper
+          elevation={0}
           sx={{
-            display: "flex",
-            justifyContent: "center",
-            py: 6,
+            p: 3,
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 3,
           }}
         >
-          <CircularProgress />
-        </Box>
+          <TableSkeleton rows={8} />
+        </Paper>
       ) : report ? (
         <>
           <Stack
@@ -833,12 +836,7 @@ export default function Reports() {
                   {report.dailyEntries.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={4} align="center">
-                        <Typography
-                          color="text.secondary"
-                          sx={{ py: 3 }}
-                        >
-                          No duties recorded for this period.
-                        </Typography>
+                        <EmptyState message="No duties recorded for this period." />
                       </TableCell>
                     </TableRow>
                   )}
@@ -847,7 +845,19 @@ export default function Reports() {
             </TableContainer>
           </Paper>
         </>
-      ) : null}
+      ) : (
+        <Paper
+          elevation={0}
+          sx={{
+            p: 3,
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 3,
+          }}
+        >
+          <EmptyState message="Select a team and date range to generate a report." />
+        </Paper>
+      )}
     </Box>
   );
 }

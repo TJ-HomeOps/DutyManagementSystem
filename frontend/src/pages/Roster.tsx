@@ -5,7 +5,6 @@ import {
   Box,
   Button,
   Chip,
-  CircularProgress,
   FormControlLabel,
   MenuItem,
   Paper,
@@ -27,6 +26,8 @@ import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { alpha, useTheme, type Theme } from "@mui/material/styles";
 
+import EmptyState from "../components/EmptyState";
+import TableSkeleton from "../components/TableSkeleton";
 import { api } from "../services/api";
 import type { RosterDayPlan, Team } from "../services/api";
 
@@ -371,14 +372,8 @@ export default function Roster() {
         }}
       >
         {loading ? (
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              py: 6,
-            }}
-          >
-            <CircularProgress />
+          <Box sx={{ p: 3 }}>
+            <TableSkeleton />
           </Box>
         ) : (
           <TableContainer sx={{ maxHeight: 640 }}>
@@ -473,12 +468,7 @@ export default function Roster() {
                 {plan.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} align="center">
-                      <Typography
-                        color="text.secondary"
-                        sx={{ py: 4 }}
-                      >
-                        Select a team to preview the roster.
-                      </Typography>
+                      <EmptyState message="Select a team to preview the roster." />
                     </TableCell>
                   </TableRow>
                 )}

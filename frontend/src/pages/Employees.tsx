@@ -7,7 +7,6 @@ import {
   Card,
   CardContent,
   Chip,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -326,33 +325,22 @@ export default function Employees() {
               />
             </Stack>
 
-            {loading ? (
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  py: 6,
-                }}
-              >
-                <CircularProgress />
-              </Box>
-            ) : (
-              <DataGrid
-                rows={filteredEmployees}
-                columns={columns}
-                autoHeight
-                pageSizeOptions={[10, 25, 50]}
-                initialState={{
-                  pagination: {
-                    paginationModel: {
-                      pageSize: 10,
-                      page: 0,
-                    },
+            <DataGrid
+              rows={filteredEmployees}
+              columns={columns}
+              loading={loading}
+              autoHeight
+              pageSizeOptions={[10, 25, 50]}
+              initialState={{
+                pagination: {
+                  paginationModel: {
+                    pageSize: 10,
+                    page: 0,
                   },
-                }}
-                disableRowSelectionOnClick
-              />
-            )}
+                },
+              }}
+              disableRowSelectionOnClick
+            />
           </CardContent>
         </Card>
       </Box>
