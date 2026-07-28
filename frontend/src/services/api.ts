@@ -44,6 +44,30 @@ async function request<T>(
   return response.json();
 }
 
+export interface DashboardTeamDuty {
+  teamId: string;
+  teamName: string;
+  teamColor: string | null;
+  employeeName: string | null;
+}
+
+export interface DashboardTeamBreakdown {
+  teamId: string;
+  teamName: string;
+  teamColor: string | null;
+  employeeCount: number;
+}
+
+export interface DashboardUpcomingAssignment {
+  id: string;
+  teamId: string;
+  teamName: string;
+  teamColor: string | null;
+  employeeName: string;
+  start: string;
+  end: string;
+}
+
 export interface DashboardResponse {
   stats: {
     employees: number;
@@ -51,8 +75,9 @@ export interface DashboardResponse {
     rules: number;
     assignments: number;
   };
-  todayDuty: any;
-  upcoming: any[];
+  todayDutyByTeam: DashboardTeamDuty[];
+  teamBreakdown: DashboardTeamBreakdown[];
+  upcoming: DashboardUpcomingAssignment[];
 }
 
 export type Currency = "DKK" | "EUR";

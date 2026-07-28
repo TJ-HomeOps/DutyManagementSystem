@@ -2,16 +2,49 @@ import { useEffect, useState } from "react";
 
 import {
   Box,
-  Card,
-  CardContent,
+  Chip,
   Grid,
+  Paper,
+  Skeleton,
+  Stack,
   Typography,
 } from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
+
+import BadgeIcon from "@mui/icons-material/Badge";
+import GroupsIcon from "@mui/icons-material/Groups";
+import RuleIcon from "@mui/icons-material/Rule";
+import EventAvailableIcon from "@mui/icons-material/EventAvailable";
+
+import {
+  Bar,
+  BarChart,
+  Cell,
+  LabelList,
+  Tooltip as RechartsTooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import { api } from "../services/api";
-import type { DashboardResponse } from "../services/api";
+import type {
+  DashboardResponse,
+  DashboardUpcomingAssignment,
+} from "../services/api";
+import EmptyState from "../components/EmptyState";
+
+const DEFAULT_TEAM_COLOR = "#64748B";
+
+function formatUpcomingDate(value: string): string {
+  return new Date(value).toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+}
 
 export default function Dashboard() {
+  const theme = useTheme();
   const [dashboard, setDashboard] =
     useState<DashboardResponse | null>(null);
 
@@ -22,6 +55,30 @@ export default function Dashboard() {
   }, []);
 
   const stats = dashboard?.stats;
+  const loading = !dashboard;
+
+  const kpis = [
+    {
+      label: "Employees",
+      value: stats?.employees,
+      icon: <BadgeIcon />,
+    },
+    {
+      label: "Teams",
+      value: stats?.teams,
+      icon: <GroupsIcon />,
+    },
+    {
+      label: "Duty rules",
+      value: stats?.rules,
+      icon: <RuleIcon />,
+    },
+    {
+      label: "Assignments",
+      value: stats?.assignments,
+      icon: <EventAvailableIcon />,
+    },
+  ];
 
   return (
     <Box>
@@ -39,50 +96,275 @@ export default function Dashboard() {
         Operational overview
       </Typography>
 
-      <Grid container spacing={3}>
-        {[
-          ["Employees", stats?.employees],
-          ["Teams", stats?.teams],
-          ["Duty Rules", stats?.rules],
-          ["Assignments", stats?.assignments],
-        ].map(([title, value]) => (
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        {kpis.map((kpi) => (
           <Grid
-            key={title}
-            size={{
-              xs: 12,
-              md: 6,
-              lg: 3,
-            }}
+            key={kpi.label}
+            size={{ xs: 12, sm: 6, lg: 3 }}
           >
-            <Card
+            <Paper
               elevation={0}
               sx={{
+                p: 3,
                 borderRadius: 3,
                 border: "1px solid",
                 borderColor: "divider",
-                bgcolor: "background.paper",
               }}
             >
-              <CardContent>
-                <Typography color="text.secondary">
-                  {title}
-                </Typography>
-
-                <Typography
-                  variant="h3"
+              <Stack
+                direction="row"
+                spacing={2}
+                sx={{ alignItems: "center" }}
+              >
+                <Box
                   sx={{
-                    mt: 2,
-                    fontWeight: 700,
+                    width: 44,
+                    height: 44,
+                    borderRadius: 2,
+                    display: "grid",
+                    placeItems: "center",
+                    bgcolor: alpha(theme.palette.primary.main, 0.12),
                     color: "primary.main",
                   }}
                 >
-                  {value ?? "..."}
-                </Typography>
-              </CardContent>
-            </Card>
+                  {kpi.icon}
+                </Box>
+
+                <Box>
+                  <Typography color="text.secondary" variant="body2">
+                    {kpi.label}
+                  </Typography>
+
+                  {loading ? (
+                    <Skeleton width={48} height={36} />
+                  ) : (
+                    <Typography
+                      variant="h4"
+                      sx={{ fontWeight: 700 }}
+                    >
+                      {kpi.value}
+                    </Typography>
+                  )}
+                </Box>
+              </Stack>
+            </Paper>
           </Grid>
         ))}
       </Grid>
+
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              border: "1px solid",
+              borderColor: "divider",
+              height: "100%",
+            }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+              Today's duty
+            </Typography>
+
+            {loading ? (
+              <Stack spacing={1.5}>
+                {[0, 1].map((i) => (
+                  <Skeleton key={i} height={40} />
+                ))}
+              </Stack>
+            ) : dashboard.todayDutyByTeam.length === 0 ? (
+              <EmptyState message="No teams yet." />
+            ) : (
+              <Stack spacing={1.5}>
+                {dashboard.todayDutyByTeam.map((duty) => (
+                  <Stack
+                    key={duty.teamId}
+                    direction="row"
+                    spacing={1.5}
+                    sx={{
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      py: 1,
+                      px: 1.5,
+                      borderRadius: 2,
+                      bgcolor: "action.hover",
+                    }}
+                  >
+                    <Chip
+                      size="small"
+                      label={duty.teamName}
+                      sx={{
+                        bgcolor: duty.teamColor ?? DEFAULT_TEAM_COLOR,
+                        color: "#FFFFFF",
+                      }}
+                    />
+
+                    <Typography
+                      sx={{
+                        fontWeight: duty.employeeName ? 700 : 400,
+                      }}
+                      color={
+                        duty.employeeName
+                          ? "text.primary"
+                          : "text.secondary"
+                      }
+                    >
+                      {duty.employeeName ?? "Unassigned"}
+                    </Typography>
+                  </Stack>
+                ))}
+              </Stack>
+            )}
+          </Paper>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              border: "1px solid",
+              borderColor: "divider",
+              height: "100%",
+            }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+              Employees per team
+            </Typography>
+
+            {loading ? (
+              <Skeleton variant="rectangular" height={160} sx={{ borderRadius: 2 }} />
+            ) : dashboard.teamBreakdown.length === 0 ? (
+              <EmptyState message="No teams yet." />
+            ) : (
+              <BarChart
+                width={420}
+                height={Math.max(120, dashboard.teamBreakdown.length * 48)}
+                data={dashboard.teamBreakdown}
+                layout="vertical"
+                margin={{ top: 0, right: 32, bottom: 0, left: 0 }}
+              >
+                <XAxis type="number" hide />
+
+                <YAxis
+                  type="category"
+                  dataKey="teamName"
+                  width={100}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{
+                    fill: theme.palette.text.secondary,
+                    fontSize: 13,
+                  }}
+                />
+
+                <RechartsTooltip
+                  cursor={{ fill: theme.palette.action.hover }}
+                  contentStyle={{
+                    background: theme.palette.background.paper,
+                    border: `1px solid ${theme.palette.divider}`,
+                    borderRadius: 8,
+                    color: theme.palette.text.primary,
+                  }}
+                  labelStyle={{ color: theme.palette.text.primary }}
+                  formatter={(value) => [
+                    `${value} employee${value === 1 ? "" : "s"}`,
+                    "",
+                  ]}
+                />
+
+                <Bar
+                  dataKey="employeeCount"
+                  barSize={22}
+                  radius={[0, 4, 4, 0]}
+                >
+                  {dashboard.teamBreakdown.map((team) => (
+                    <Cell
+                      key={team.teamId}
+                      fill={team.teamColor ?? DEFAULT_TEAM_COLOR}
+                    />
+                  ))}
+
+                  <LabelList
+                    dataKey="employeeCount"
+                    position="right"
+                    fill={theme.palette.text.secondary}
+                    fontSize={13}
+                  />
+                </Bar>
+              </BarChart>
+            )}
+          </Paper>
+        </Grid>
+      </Grid>
+
+      <Paper
+        elevation={0}
+        sx={{
+          p: 3,
+          borderRadius: 3,
+          border: "1px solid",
+          borderColor: "divider",
+        }}
+      >
+        <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+          Upcoming duty
+        </Typography>
+
+        {loading ? (
+          <Stack spacing={1}>
+            {[0, 1, 2].map((i) => (
+              <Skeleton key={i} height={36} />
+            ))}
+          </Stack>
+        ) : dashboard.upcoming.length === 0 ? (
+          <EmptyState message="Nothing scheduled yet." />
+        ) : (
+          <Stack spacing={0.5}>
+            {dashboard.upcoming.map(
+              (assignment: DashboardUpcomingAssignment) => (
+                <Stack
+                  key={assignment.id}
+                  direction="row"
+                  spacing={1.5}
+                  sx={{
+                    alignItems: "center",
+                    py: 1,
+                    px: 1,
+                    borderRadius: 2,
+                    "&:hover": { bgcolor: "action.hover" },
+                  }}
+                >
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ minWidth: 90 }}
+                  >
+                    {formatUpcomingDate(assignment.start)}
+                  </Typography>
+
+                  <Chip
+                    size="small"
+                    label={assignment.teamName}
+                    sx={{
+                      bgcolor:
+                        assignment.teamColor ?? DEFAULT_TEAM_COLOR,
+                      color: "#FFFFFF",
+                    }}
+                  />
+
+                  <Typography sx={{ fontWeight: 600 }}>
+                    {assignment.employeeName}
+                  </Typography>
+                </Stack>
+              ),
+            )}
+          </Stack>
+        )}
+      </Paper>
     </Box>
   );
 }
