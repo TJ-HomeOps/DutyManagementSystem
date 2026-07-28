@@ -5,13 +5,27 @@ import {
   Box,
   Button,
   CircularProgress,
+  Divider,
   Paper,
   TextField,
   Typography,
 } from "@mui/material";
 import LockIcon from "@mui/icons-material/Lock";
 
-import { api } from "../services/api";
+import { api, entraLoginUrl } from "../services/api";
+
+// Microsoft's four-color "sign in with Microsoft" mark — their branding
+// guidelines call for this exact glyph next to the button label.
+function MicrosoftLogo() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 21 21" aria-hidden="true">
+      <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+      <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
+      <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+      <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+    </svg>
+  );
+}
 
 type GateState =
   | "checking"
@@ -26,15 +40,18 @@ export default function AuthGate({
   children: ReactNode;
 }) {
   const [state, setState] = useState<GateState>("checking");
+  const [entraEnabled, setEntraEnabled] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
 
     async function check() {
       try {
-        const { enabled } = await api.authStatus();
+        const { enabled, entra } = await api.authStatus();
 
         if (cancelled) return;
+
+        setEntraEnabled(entra.enabled);
 
         if (!enabled) {
           setState("open");
@@ -97,6 +114,7 @@ export default function AuthGate({
   if (state === "needsPassword") {
     return (
       <PasswordPrompt
+        entraEnabled={entraEnabled}
         onSuccess={() => setState("authenticated")}
       />
     );
@@ -106,12 +124,18 @@ export default function AuthGate({
 }
 
 function PasswordPrompt({
+  entraEnabled,
   onSuccess,
 }: {
+  entraEnabled: boolean;
   onSuccess: () => void;
 }) {
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(() =>
+    new URLSearchParams(window.location.search).has("entraError")
+      ? "Microsoft sign-in failed. Try again or use the password."
+      : "",
+  );
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(
@@ -186,6 +210,29 @@ function PasswordPrompt({
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
           </Alert>
+        )}
+
+        {entraEnabled && (
+          <>
+            <Button
+              variant="outlined"
+              fullWidth
+              startIcon={<MicrosoftLogo />}
+              href={entraLoginUrl}
+              sx={{ mb: 2 }}
+            >
+              Sign in with Microsoft
+            </Button>
+
+            <Divider sx={{ mb: 2 }}>
+              <Typography
+                color="text.secondary"
+                variant="caption"
+              >
+                OR
+              </Typography>
+            </Divider>
+          </>
         )}
 
         <TextField

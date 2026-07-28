@@ -102,6 +102,22 @@ model AppSettings {
   lockEnabled  Boolean @default(false)
   passwordHash String?
 
+  // Separate shared password gating the Settings page itself, so anyone who
+  // unlocks the app with the main password still can't reach admin config
+  // (Entra setup, the lock toggle) without also knowing this one.
+  settingsPasswordHash String?
+
+  // Microsoft Entra ID (Azure AD) SSO — baked in but inert until an admin
+  // fills these in and flips entraEnabled on from the Settings page. Entra
+  // login is an alternate way to obtain the same session cookie the local
+  // password produces; it never replaces the local password.
+  entraEnabled         Boolean @default(false)
+  entraTenantId        String?
+  entraClientId        String?
+  // AES-256-GCM ciphertext ("iv:tag:ciphertext" hex), keyed by serverSecret.
+  entraClientSecretEnc String?
+  entraRedirectUri     String?
+
   // Generated once and never exposed. Session tokens are
   // hmac(serverSecret, passwordHash), so rotating the password
   // automatically invalidates every previously issued session.

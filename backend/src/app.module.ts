@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
+import { SettingsModule } from './settings/settings.module';
 import { TeamsModule } from './teams/teams.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { EmployeesModule } from './employees/employees.module';
@@ -23,6 +24,7 @@ import { ReportsModule } from './reports/reports.module';
     }),
     PrismaModule,
     AuthModule,
+    SettingsModule,
     TeamsModule,
     DashboardModule,
     EmployeesModule,

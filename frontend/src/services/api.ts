@@ -260,7 +260,34 @@ export interface DutyReport {
 
 export interface AuthStatus {
   enabled: boolean;
+  entra: {
+    enabled: boolean;
+  };
 }
+
+export interface SettingsStatus {
+  configured: boolean;
+}
+
+export interface EntraConfig {
+  enabled: boolean;
+  tenantId: string | null;
+  clientId: string | null;
+  redirectUri: string | null;
+  hasClientSecret: boolean;
+}
+
+export interface UpdateEntraConfigDto {
+  enabled: boolean;
+  tenantId?: string;
+  clientId?: string;
+  clientSecret?: string;
+  redirectUri?: string;
+}
+
+// Full page navigation, not a fetch() call — the browser needs to follow
+// the 302 chain out to Microsoft and back.
+export const entraLoginUrl = `${API_BASE}/auth/entra/login`;
 
 export const api = {
   //
@@ -469,14 +496,44 @@ export const api = {
       body: JSON.stringify({ password }),
     }),
 
+  //
+  // Settings (admin-only area, gated by its own password)
+  //
+  settingsStatus: () =>
+    request<SettingsStatus>("/settings/status"),
+
+  settingsSession: () =>
+    request<{ ok: true }>("/settings/session"),
+
+  settingsLogin: (password: string) =>
+    request<{ ok: true }>("/settings/login", {
+      method: "POST",
+      body: JSON.stringify({ password }),
+    }),
+
+  setSettingsPassword: (password: string) =>
+    request<{ ok: true }>("/settings/password", {
+      method: "POST",
+      body: JSON.stringify({ password }),
+    }),
+
   enableLock: (password: string) =>
-    request<{ ok: true }>("/auth/enable", {
+    request<{ ok: true }>("/settings/lock/enable", {
       method: "POST",
       body: JSON.stringify({ password }),
     }),
 
   disableLock: () =>
-    request<{ ok: true }>("/auth/disable", {
+    request<{ ok: true }>("/settings/lock/disable", {
       method: "POST",
+    }),
+
+  getEntraConfig: () =>
+    request<EntraConfig>("/settings/entra"),
+
+  updateEntraConfig: (dto: UpdateEntraConfigDto) =>
+    request<EntraConfig>("/settings/entra", {
+      method: "PUT",
+      body: JSON.stringify(dto),
     }),
 };

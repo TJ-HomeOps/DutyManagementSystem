@@ -106,13 +106,21 @@ Designed for organizations that need a simple overview of personnel, teams, duty
 
 ---
 
+### Access Control & Settings
+
+- App-wide password lock — a single shared password required to open the app, toggled from Settings
+- Settings itself sits behind a second, separate admin password, so unlocking the app doesn't grant access to Settings
+- **Microsoft Entra ID (Azure AD) single sign-on** — ships built in but inactive; an admin registers an app in the Entra admin center and fills in the Tenant ID, Client ID, Client secret and Redirect URI from Settings to turn it on. Once enabled, "Sign in with Microsoft" appears alongside the local password on the login screen — the local password always keeps working as a fallback
+- Client secret is encrypted at rest
+
+---
+
 ## Planned Features
 
 - Duty conflict detection (e.g. double-booking, missing rotation members)
 - Employee availability
 - Email notifications
 - Audit log
-- Authentication
 - Role based permissions
 
 ---
@@ -186,6 +194,15 @@ npm install
 npm run dev
 ```
 
+### Microsoft Entra ID SSO (optional)
+
+Ships disabled by default — the app works purely on the local password until you turn this on.
+
+1. Register an app in the [Entra admin center](https://entra.microsoft.com) (App registrations → New registration).
+2. Add a Web redirect URI matching your deployment, e.g. `https://your-domain/api/auth/entra/callback`.
+3. Create a client secret under Certificates & secrets.
+4. In the app, open **Settings** (its own admin password, separate from the app lock), enable Password Protection if it isn't already, then fill in the Tenant ID, Application (client) ID, client secret and the same Redirect URI under **Microsoft Entra ID**, and switch it on.
+
 ---
 
 ## Current Progress
@@ -200,7 +217,7 @@ npm run dev
 | Roster Engine | ✅ |
 | Holidays | ✅ |
 | Reports | ✅ |
-| Settings | ⏳ |
+| Settings | ✅ |
 
 ---
 
@@ -221,7 +238,7 @@ npm run dev
 - ✅ Reporting
 - ✅ PDF export
 - ⏳ Notifications
-- ⏳ Authentication
+- ✅ Authentication (local password lock + Microsoft Entra ID SSO)
 
 ---
 

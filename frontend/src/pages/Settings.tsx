@@ -18,10 +18,19 @@ import {
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
 
-import { api } from "../services/api";
+import { api, type EntraConfig } from "../services/api";
 import { useColorMode } from "../theme/ColorModeProvider";
+import SettingsGate from "../auth/SettingsGate";
 
 export default function Settings() {
+  return (
+    <SettingsGate>
+      <SettingsContent />
+    </SettingsGate>
+  );
+}
+
+function SettingsContent() {
   const { mode, toggleMode } = useColorMode();
 
   const [lockEnabled, setLockEnabled] = useState(false);
@@ -31,6 +40,8 @@ export default function Settings() {
   const [setPasswordOpen, setSetPasswordOpen] =
     useState(false);
   const [confirmDisableOpen, setConfirmDisableOpen] =
+    useState(false);
+  const [changeAdminPasswordOpen, setChangeAdminPasswordOpen] =
     useState(false);
 
   useEffect(() => {
@@ -146,6 +157,7 @@ export default function Settings() {
           borderColor: "divider",
           borderRadius: 3,
           p: 3,
+          mb: 3,
         }}
       >
         <Typography
@@ -175,6 +187,36 @@ export default function Settings() {
         />
       </Paper>
 
+      <EntraSection lockEnabled={lockEnabled} />
+
+      <Paper
+        elevation={0}
+        sx={{
+          border: "1px solid",
+          borderColor: "divider",
+          borderRadius: 3,
+          p: 3,
+        }}
+      >
+        <Typography
+          variant="h6"
+          sx={{ fontWeight: 700, mb: 0.5 }}
+        >
+          Admin Password
+        </Typography>
+
+        <Typography color="text.secondary" sx={{ mb: 2 }}>
+          The separate password that guards this Settings page.
+        </Typography>
+
+        <Button
+          variant="outlined"
+          onClick={() => setChangeAdminPasswordOpen(true)}
+        >
+          Change admin password
+        </Button>
+      </Paper>
+
       <SetPasswordDialog
         open={setPasswordOpen}
         onClose={() => setSetPasswordOpen(false)}
@@ -182,6 +224,11 @@ export default function Settings() {
           setLockEnabled(true);
           setSetPasswordOpen(false);
         }}
+      />
+
+      <ChangeAdminPasswordDialog
+        open={changeAdminPasswordOpen}
+        onClose={() => setChangeAdminPasswordOpen(false)}
       />
 
       <Dialog
@@ -318,5 +365,265 @@ function SetPasswordDialog({
         </Button>
       </DialogActions>
     </Dialog>
+  );
+}
+
+function ChangeAdminPasswordDialog({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setPassword("");
+      setConfirmPassword("");
+      setError("");
+    }
+  }, [open]);
+
+  async function handleSubmit() {
+    if (password.length < 4) {
+      setError("Password must be at least 4 characters.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError("");
+
+      await api.setSettingsPassword(password);
+
+      onClose();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to change the admin password.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth>
+      <DialogTitle>Change admin password</DialogTitle>
+
+      <DialogContent>
+        <Stack spacing={2} sx={{ mt: 1 }}>
+          {error && <Alert severity="error">{error}</Alert>}
+
+          <TextField
+            type="password"
+            label="New admin password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoFocus
+            fullWidth
+          />
+
+          <TextField
+            type="password"
+            label="Confirm new admin password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            fullWidth
+          />
+        </Stack>
+      </DialogContent>
+
+      <DialogActions>
+        <Button onClick={onClose} disabled={saving}>
+          Cancel
+        </Button>
+
+        <Button
+          variant="contained"
+          onClick={handleSubmit}
+          disabled={saving || !password || !confirmPassword}
+        >
+          Save
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+function EntraSection({ lockEnabled }: { lockEnabled: boolean }) {
+  const [config, setConfig] = useState<EntraConfig | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const [enabled, setEnabled] = useState(false);
+  const [tenantId, setTenantId] = useState("");
+  const [clientId, setClientId] = useState("");
+  const [clientSecret, setClientSecret] = useState("");
+  const [redirectUri, setRedirectUri] = useState("");
+
+  useEffect(() => {
+    api.getEntraConfig()
+      .then((data) => {
+        setConfig(data);
+        setEnabled(data.enabled);
+        setTenantId(data.tenantId ?? "");
+        setClientId(data.clientId ?? "");
+        setRedirectUri(
+          data.redirectUri ??
+            `${window.location.origin}/api/auth/entra/callback`,
+        );
+      })
+      .catch(() =>
+        setError("Unable to load Microsoft Entra ID settings."),
+      )
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function handleSave() {
+    try {
+      setSaving(true);
+      setError("");
+      setSaved(false);
+
+      const updated = await api.updateEntraConfig({
+        enabled,
+        tenantId,
+        clientId,
+        redirectUri,
+        ...(clientSecret ? { clientSecret } : {}),
+      });
+
+      setConfig(updated);
+      setClientSecret("");
+      setSaved(true);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to save Microsoft Entra ID settings.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        border: "1px solid",
+        borderColor: "divider",
+        borderRadius: 3,
+        p: 3,
+        mb: 3,
+      }}
+    >
+      <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
+        Microsoft Entra ID
+      </Typography>
+
+      <Typography color="text.secondary" sx={{ mb: 2 }}>
+        Let users sign in with a Microsoft work or school account,
+        in addition to the local password. Register an app in the
+        Entra admin center first, then fill in its details below.
+      </Typography>
+
+      {!lockEnabled && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          Password Protection must be enabled above before Entra
+          sign-in can be turned on — Entra is an alternate way to
+          unlock the app, not a replacement for the lock itself.
+        </Alert>
+      )}
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      {saved && !error && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          Saved.
+        </Alert>
+      )}
+
+      {!loading && config && (
+        <Stack spacing={2}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={enabled}
+                onChange={(_e, checked) => setEnabled(checked)}
+              />
+            }
+            label={enabled ? "Enabled" : "Disabled"}
+          />
+
+          <TextField
+            label="Tenant ID"
+            value={tenantId}
+            onChange={(e) => setTenantId(e.target.value)}
+            fullWidth
+            size="small"
+          />
+
+          <TextField
+            label="Application (client) ID"
+            value={clientId}
+            onChange={(e) => setClientId(e.target.value)}
+            fullWidth
+            size="small"
+          />
+
+          <TextField
+            type="password"
+            label="Client secret"
+            value={clientSecret}
+            onChange={(e) => setClientSecret(e.target.value)}
+            placeholder={
+              config.hasClientSecret
+                ? "•••••••• (unchanged)"
+                : ""
+            }
+            helperText="Leave blank to keep the currently saved secret."
+            fullWidth
+            size="small"
+          />
+
+          <TextField
+            label="Redirect URI"
+            value={redirectUri}
+            onChange={(e) => setRedirectUri(e.target.value)}
+            helperText="Register this exact URI as a Web redirect URI on the Entra app registration."
+            fullWidth
+            size="small"
+          />
+
+          <Box>
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={saving}
+            >
+              Save
+            </Button>
+          </Box>
+        </Stack>
+      )}
+    </Paper>
   );
 }
